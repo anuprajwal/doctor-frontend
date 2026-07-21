@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Base Smoothness Override */
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased min-h-screen;
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+}
+
+/* Custom Component Layout Styles matching the provided UI screenshots */
+@layer components {
+  /* Form Inputs styling consistency layer */
+  .form-input-focus {
+    @apply focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none;
+  }
+
+  /* Custom styling for custom native date/time pickers */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    @apply cursor-pointer opacity-60 hover:opacity-100 transition-opacity;
+    filter: invert(30%) sepia(10%) saturate(1200%) hue-rotate(200deg) brightness(90%) contrast(80%);
+  }
+
+  /* Custom styling for the specialized Toggle Switch element in the Schedule matrix */
+  .schedule-toggle {
+    @apply w-9 h-5 bg-slate-200 rounded-full appearance-none checked:bg-blue-600 
+           transition-colors cursor-pointer relative outline-none;
+  }
+  
+  .schedule-toggle::before {
+    @apply content-[''] absolute h-4 w-4 bg-white rounded-full top-0.5 left-0.5 
+           transition-transform;
+  }
+  
+  .schedule-toggle:checked::before {
+    @apply translate-x-4;
+  }
+
+  /* Custom Slim Scrollbars for inner elements like the break matrix container */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-slate-100 rounded;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 rounded hover:bg-slate-400;
+  }
+}
+
+/* Animation utilities for processing states */
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
