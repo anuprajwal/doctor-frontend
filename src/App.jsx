@@ -1,121 +1,106 @@
-import React, { useState, useEffect } from 'react';
-import Dashboard from './components/patient/Dashboard';
-import DoctorSearch from './components/patient/DoctorSearch';
-import DoctorDetails from './components/patient/DoctorDetails';
-import HospitalSearch from './components/patient/HospitalSearch';
-import AppointmentList from './components/patient/AppointmentList';
-import AppointmentDetails from './components/patient/AppointmentDetails';
-import ProfileManagement from './components/patient/ProfileManagement';
-import { setAccountRestrictionHandler } from './services/api';
-import { ShieldAlert, ShieldX, LifeBuoy } from 'lucide-react';
-import { useNotificationToken } from './utils/useNotificationToken';
+import React, { useState } from 'react';
+import ProfileCompletion from './components/doctor/ProfileCompletion';
+import DocumentUpload from './components/doctor/DocumentUpload';
+import ScheduleConfiguration from './components/doctor/ScheduleConfiguration';
+import AppointmentList from './components/doctor/AppointmentList';
+import AppointmentDetails from './components/doctor/AppointmentDetails';
+import PrescriptionWorkspace from './components/doctor/PrescriptionWorkspace';
+import HospitalSearch from './components/doctor/HospitalSearch';
+import NotFound from './pages/NotFound';
 
 export default function App() {
-  // Initialize notification listener hook
-  useNotificationToken();
-
-  const [view, setView] = useState('dashboard');
-  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [currentTab, setCurrentTab] = useState('appointments');
   const [selectedAppointment, setSelectedAppointment] = useState(null);
-  const [restriction, setRestriction] = useState(null); // null | { status: 'holded' | 'deleted', message: string }
 
-  useEffect(() => {
-    // Register global interceptor callback for 403 restriction states
-    setAccountRestrictionHandler((restrictedState) => {
-      setRestriction(restrictedState);
-    });
-  }, []);
+  const handleTransitionToDetails = (appointment) => {
+    setSelectedAppointment(appointment);
+    setCurrentTab('appointment-detail');
+  };
 
-  // Isolated layout view rendered when an administrative restriction triggers
-  if (restriction) {
-    const isDeleted = restriction.status === 'deleted';
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="bg-white border border-slate-200 w-full max-w-lg rounded-2xl shadow-xl p-8 text-center space-y-6">
-          <div className={`mx-auto p-4 rounded-2xl w-fit ${isDeleted ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'}`}>
-            {isDeleted ? <ShieldX className="w-12 h-12" /> : <ShieldAlert className="w-12 h-12" />}
-          </div>
-
-          <div className="space-y-2">
-            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-              {isDeleted ? 'Account Terminated' : 'Administrative Hold Active'}
-            </h1>
-            <p className="text-slate-600 text-sm leading-relaxed font-medium">
-              {restriction.message || 'Access limitations are currently enforced on this account.'}
-            </p>
-          </div>
-
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center gap-3 text-left">
-            <LifeBuoy className="w-5 h-5 text-slate-400 flex-shrink-0" />
-            <span className="text-xs text-slate-500 font-medium">
-              To appeal this status or request profile recovery, please contact support or email <strong className="text-slate-700">support@docapp.co.in</strong>.
-            </span>
-          </div>
-
-          <button
-            onClick={() => {
-              document.cookie = 'auth_token=; path=/; domain=.docapp.co.in; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
-              window.location.href = 'https://auth.docapp.co.in';
-            }}
-            className="w-full bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold py-3 rounded-xl transition-colors shadow-sm"
-          >
-            Return to Login Gateway
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const renderActiveView = () => {
-    switch (view) {
-      case 'dashboard':
-        return <Dashboard setView={setView} />;
-      case 'doctors':
-        return (
-          <DoctorSearch
-            onSelectDoctor={(doc) => {
-              setSelectedDoctor(doc);
-              setView('doctor-details');
-            }}
-          />
-        );
-      case 'doctor-details':
-        return (
-          <DoctorDetails
-            doctor={selectedDoctor}
-            onBack={() => setView('doctors')}
-          />
-        );
-      case 'hospitals':
-        return <HospitalSearch />;
-      case 'appointments':
-        return (
-          <AppointmentList
-            onSelectAppointment={(app) => {
-              setSelectedAppointment(app);
-              setView('appointment-details');
-            }}
-          />
-        );
-      case 'appointment-details':
-        return (
-          <AppointmentDetails
-            appointment={selectedAppointment}
-            onBack={() => setView('appointments')}
-          />
-        );
-      case 'profile':
-        return <ProfileManagement />;
-      default:
-        return <Dashboard setView={setView} />;
-    }
+  const handleTransitionToPrescription = (appointment) => {
+    setSelectedAppointment(appointment);
+    setCurrentTab('prescription-workspace');
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {renderActiveView()}
+    <div class="min-h-screen flex flex-col bg-slate-50 print:bg-white">
+      {/* Dynamic Main App Navigation Bar */}
+      <header class="bg-white border-b border-slate-200/60 shadow-sm sticky top-0 z-50 print:hidden">
+        <div class="max-w-7xl mx-auto px-4 flex items-center justify-between h-16">
+          <div class="flex items-center gap-2 font-bold text-slate-800 text-base cursor-pointer" onClick={() => setCurrentTab('appointments')}>
+            <span class="text-blue-600 text-xl">🧬</span> MedPortal <span class="text-xs font-bold text-slate-400 border border-slate-200 rounded px-1.5 py-0.5 bg-slate-50">Doctor</span>
+          </div>
+          
+          <nav class="flex gap-6 text-xs font-bold text-slate-500">
+            <button 
+              onClick={() => setCurrentTab('appointments')} 
+              className={`pb-1 transition-all ${currentTab.startsWith('appointment') || currentTab === 'prescription-workspace' ? 'border-b-2 border-blue-600 text-blue-600' : 'hover:text-slate-800'}`}
+            >
+              Appointments
+            </button>
+            <button 
+              onClick={() => setCurrentTab('hospitals')} 
+              className={`pb-1 transition-all ${currentTab === 'hospitals' ? 'border-b-2 border-blue-600 text-blue-600' : 'hover:text-slate-800'}`}
+            >
+              Search Hospitals
+            </button>
+            <button 
+              onClick={() => setCurrentTab('profile')} 
+              className={`pb-1 transition-all ${currentTab === 'profile' ? 'border-b-2 border-blue-600 text-blue-600' : 'hover:text-slate-800'}`}
+            >
+              My Profile
+            </button>
+            <button 
+              onClick={() => setCurrentTab('documents')} 
+              className={`pb-1 transition-all ${currentTab === 'documents' ? 'border-b-2 border-blue-600 text-blue-600' : 'hover:text-slate-800'}`}
+            >
+              Verification Documents
+            </button>
+            <button 
+              onClick={() => setCurrentTab('schedule')} 
+              className={`pb-1 transition-all ${currentTab === 'schedule' ? 'border-b-2 border-blue-600 text-blue-600' : 'hover:text-slate-800'}`}
+            >
+              Schedule Config
+            </button>
+          </nav>
+
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-sm shadow-inner">👨‍⚕️</div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Dynamic Frame Entry Window */}
+      <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 print:p-0">
+        {currentTab === 'appointments' && (
+          <AppointmentList 
+            onViewDetails={handleTransitionToDetails} 
+            onViewPrescription={handleTransitionToPrescription} 
+          />
+        )}
+        {currentTab === 'appointment-detail' && selectedAppointment && (
+          <AppointmentDetails 
+            appointment={selectedAppointment} 
+            onBack={() => setCurrentTab('appointments')} 
+            onNavigatePrescription={handleTransitionToPrescription}
+          />
+        )}
+        {currentTab === 'prescription-workspace' && selectedAppointment && (
+          <PrescriptionWorkspace 
+            appointment={selectedAppointment} 
+            onBack={() => setCurrentTab('appointments')} 
+          />
+        )}
+        {currentTab === 'hospitals' && <HospitalSearch />}
+        {currentTab === 'profile' && <ProfileCompletion />}
+        {currentTab === 'documents' && <DocumentUpload />}
+        {currentTab === 'schedule' && <ScheduleConfiguration />}
+        {currentTab === '404' && <NotFound />}
       </main>
+
+      <footer class="bg-white border-t border-slate-100 py-4 text-center text-[10px] text-slate-400 font-semibold print:hidden">
+        © 2026 MedPlatform Health Systems. HIPAA Compliant Interface Base Integration Layer.
+      </footer>
     </div>
   );
 }
