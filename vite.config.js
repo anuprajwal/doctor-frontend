@@ -9,7 +9,7 @@ export default defineConfig({
     strictPort: true,
     host: true
   },
-      allowedHosts: ['.docapp.co.in', 'users.docapp.co.in'], // Allows Vite to accept requests from your domain
+      allowedHosts: ['.docapp.co.in', 'doctors.docapp.co.in'], // Allows Vite to accept requests from your domain
 
   resolve: {
     alias: {
