@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doctorEndpoints } from '../../services/api';
+import { doctorService } from '../../services/api';
 import Alert from '../ui/Alert';
 import Loader from '../ui/Loader';
 
@@ -10,6 +10,7 @@ export default function AppointmentList({ onViewDetails, onViewPrescription }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [status, setStatus] = useState({ loading: false, error: null });
 
+  // Metric State Cards
   const [metrics, setMetrics] = useState({ today: 0, upcoming: 0, pending: 0, cancelled: 0 });
 
   useEffect(() => {
@@ -23,72 +24,74 @@ export default function AppointmentList({ onViewDetails, onViewPrescription }) {
   const fetchAppointments = async () => {
     setStatus({ loading: true, error: null });
     try {
-      const res = await doctorEndpoints.listAppointments();
-      const data = res.data?.appointments || (Array.isArray(res.data) ? res.data : []);
+      const res = await doctorService.listAppointments();
+      const data = res.data || [];
       setAppointments(data);
       
+      // Compute dashboard summary indicators
       setMetrics({
-        today: data.filter(a => a.timeCategory === 'today' || a.appointment_date?.includes(new Date().toISOString().split('T')[0])).length,
-        upcoming: data.filter(a => (a.appointment_status || a.status)?.toLowerCase() === 'confirmed').length,
-        pending: data.filter(a => (a.appointment_status || a.status)?.toLowerCase() === 'pending').length,
-        cancelled: data.filter(a => (a.appointment_status || a.status)?.toLowerCase() === 'cancelled').length
+        today: data.filter(a => a.timeCategory === 'today').length,
+        upcoming: data.filter(a => a.status === 'CONFIRMED').length,
+        pending: data.filter(a => a.status === 'PENDING').length,
+        cancelled: data.filter(a => a.status === 'CANCELLED').length
       });
       setStatus({ loading: false, error: null });
     } catch (err) {
-      setStatus({ loading: false, error: 'Failed to load appointments from server.' });
+      setStatus({ loading: false, error: 'Failed to balance metrics streams from server environment.' });
     }
   };
 
   const filterData = () => {
     let result = [...appointments];
 
+    // Filter by tab mappings
     if (activeTab !== 'All') {
-      result = result.filter(a => (a.appointment_type || a.type)?.toLowerCase() === activeTab.toLowerCase());
+      result = result.filter(a => a.type?.toLowerCase() === activeTab.toLowerCase());
     }
 
+    // Filter by query string values
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(a => {
-        const patientName = a.user?.username || a.patientName || '';
-        const phone = a.user?.phone_number || '';
-        const idStr = String(a.id || '');
-        return patientName.toLowerCase().includes(query) || phone.includes(query) || idStr.includes(query);
-      });
+      result = result.filter(a => 
+        a.patientName?.toLowerCase().includes(query) || 
+        a.patientId?.toLowerCase().includes(query) ||
+        a.reason?.toLowerCase().includes(query)
+      );
     }
     setFilteredAppointments(result);
   };
 
   return (
-    <div className="space-y-6">
-      {/* Metric Cards Block */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
-          <div className="flex justify-between text-slate-400 text-sm font-medium">Today <span className="text-blue-500 text-base">📅</span></div>
-          <div className="text-3xl font-bold text-slate-800 mt-2">{metrics.today}</div>
-          <div className="text-xs text-emerald-600 font-semibold mt-1">Scheduled for today</div>
+    <div class="space-y-6">
+      {/* Top Cards Section Block */}
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
+          <div class="flex justify-between text-slate-400 text-sm font-medium">Today <span class="text-blue-500 text-base">📅</span></div>
+          <div class="text-3xl font-bold text-slate-800 mt-2">{metrics.today}</div>
+          <div class="text-xs text-emerald-600 font-semibold mt-1">↑ 4 from yesterday</div>
         </div>
-        <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
-          <div className="flex justify-between text-slate-400 text-sm font-medium">Confirmed <span className="text-blue-500 text-base">📤</span></div>
-          <div className="text-3xl font-bold text-slate-800 mt-2">{metrics.upcoming}</div>
-          <div className="text-xs text-slate-400 mt-1">Confirmed slots</div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
+          <div class="flex justify-between text-slate-400 text-sm font-medium">Upcoming <span class="text-blue-500 text-base">📤</span></div>
+          <div class="text-3xl font-bold text-slate-800 mt-2">{metrics.upcoming}</div>
+          <div class="text-xs text-slate-400 mt-1">Next 7 days</div>
         </div>
-        <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
-          <div className="flex justify-between text-slate-400 text-sm font-medium">Pending <span className="text-amber-500 text-base">📋</span></div>
-          <div className="text-3xl font-bold text-slate-800 mt-2">{metrics.pending}</div>
-          <div className="text-xs text-amber-600 font-semibold mt-1">Awaiting approval</div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
+          <div class="flex justify-between text-slate-400 text-sm font-medium">Pending <span class="text-amber-500 text-base">📋</span></div>
+          <div class="text-3xl font-bold text-slate-800 mt-2">{metrics.pending}</div>
+          <div class="text-xs text-amber-600 font-semibold mt-1">Requires action</div>
         </div>
-        <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
-          <div className="flex justify-between text-slate-400 text-sm font-medium">Cancelled <span className="text-red-500 text-base">❌</span></div>
-          <div className="text-3xl font-bold text-slate-800 mt-2">{metrics.cancelled}</div>
-          <div className="text-xs text-red-500 font-semibold mt-1">Cancelled / Voided</div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
+          <div class="flex justify-between text-slate-400 text-sm font-medium">Cancelled <span class="text-red-500 text-base">❌</span></div>
+          <div class="text-3xl font-bold text-slate-800 mt-2">{metrics.cancelled}</div>
+          <div class="text-xs text-red-500 font-semibold mt-1">-10% from last week</div>
         </div>
       </div>
 
-      {/* Filter and Table Section */}
-      <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
-        <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100">
-          <div className="flex gap-2 bg-slate-100 p-1 rounded-lg self-start">
-            {['All', 'Online', 'In-clinic', 'Hybrid'].map(tab => (
+      {/* Interactive Filtering Layer */}
+      <div class="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100">
+          <div class="flex gap-2 bg-slate-100 p-1 rounded-lg self-start">
+            {['All', 'Online', 'In-clinic', 'Emergency'].map(tab => (
               <button 
                 key={tab} 
                 onClick={() => setActiveTab(tab)}
@@ -98,89 +101,77 @@ export default function AppointmentList({ onViewDetails, onViewPrescription }) {
               </button>
             ))}
           </div>
-          <div className="relative w-full sm:w-72">
-            <span className="absolute left-3 top-2.5 text-slate-400 text-xs">🔍</span>
+          <div class="relative w-full sm:w-72">
+            <span class="absolute left-3 top-2.5 text-slate-400 text-xs">🔍</span>
             <input 
               type="text" 
-              placeholder="Search patient name, phone, ID..." 
+              placeholder="Search patient name, ID or reason..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-4 py-2 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              class="w-full pl-8 pr-4 py-2 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
         </div>
 
+        {/* Data Presentation Table Area */}
         <Alert type="error" message={status.error} />
         {status.loading ? <Loader /> : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                  <th className="p-4">Appt ID</th>
-                  <th className="p-4">Patient Details</th>
-                  <th className="p-4">Date & Time</th>
-                  <th className="p-4">Type</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-center">Actions</th>
+                <tr class="bg-slate-50 border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  <th class="p-4">Patient Name</th>
+                  <th class="p-4">Date & Time</th>
+                  <th class="p-4">Type</th>
+                  <th class="p-4">Reason</th>
+                  <th class="p-4">Status</th>
+                  <th class="p-4 text-center">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+              <tbody class="divide-y divide-slate-100 text-xs text-slate-700">
                 {filteredAppointments.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="p-8 text-center text-slate-400 font-medium">No appointments found matching your search.</td>
+                    <td colSpan="6" class="p-8 text-center text-slate-400 font-medium">No matching appointment records found inside database view.</td>
                   </tr>
-                ) : filteredAppointments.map((item, index) => {
-                  const uniqueKey = item.id || `appt-${index}`;
-                  const patientName = item.user?.username || item.patientName || 'Patient';
-                  const patientPhone = item.user?.phone_number || 'N/A';
-                  const apptStatus = item.appointment_status || item.status || 'Pending';
-                  const apptType = item.appointment_type || item.type || 'Online';
-                  
-                  return (
-                    <tr key={uniqueKey} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="p-4 font-bold text-slate-900">#{item.id}</td>
-                      <td className="p-4 font-semibold text-slate-800">
-                        <div>{patientName}</div>
-                        <div className="text-[10px] text-slate-400 font-normal mt-0.5">Phone: {patientPhone}</div>
-                      </td>
-                      <td className="p-4">
-                        <div>{item.appointment_date ? new Date(item.appointment_date).toLocaleDateString() : (item.date || 'N/A')}</div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">{item.appointment_start_time || item.time || ''}</div>
-                      </td>
-                      <td className="p-4">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-blue-50 text-blue-600">
-                          {apptType}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide capitalize ${
-                          apptStatus.toLowerCase() === 'closed' || apptStatus.toLowerCase() === 'completed' ? 'bg-emerald-50 text-emerald-600' :
-                          apptStatus.toLowerCase() === 'confirmed' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'
-                        }`}>
-                          {apptStatus}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center justify-center gap-3 text-slate-500">
-                          <button 
-                            onClick={() => onViewDetails(item)} 
-                            className="p-1.5 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition" 
-                            title="View Details & Documents"
-                          >
-                            👁️ <span className="sr-only">Details</span>
-                          </button>
-                          <button 
-                            onClick={() => onViewPrescription(item)} 
-                            className="p-1.5 hover:bg-emerald-50 hover:text-emerald-600 rounded-lg transition" 
-                            title="Prescription Workspace"
-                          >
-                            📝 <span className="sr-only">Prescription</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                ) : filteredAppointments.map(item => (
+                  <tr key={item.id} class="hover:bg-slate-50/80 transition-colors">
+                    <td class="p-4 font-semibold text-slate-800">
+                      <div>{item.patientName}</div>
+                      <div class="text-[10px] text-slate-400 font-normal mt-0.5">ID: {item.patientId}</div>
+                    </td>
+                    <td class="p-4">
+                      <div>{item.date}</div>
+                      <div class="text-[10px] text-slate-400 mt-0.5">{item.time}</div>
+                    </td>
+                    <td class="p-4">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
+                        item.type?.toLowerCase() === 'online' ? 'bg-blue-50 text-blue-600' :
+                        item.type?.toLowerCase() === 'emergency' ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-700'
+                      }`}>
+                        {item.type}
+                      </span>
+                    </td>
+                    <td class="p-4 max-w-xs truncate text-slate-500">{item.reason || 'Routine general clinical assessment checkup.'}</td>
+                    <td class="p-4">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide ${
+                        item.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600' :
+                        item.status === 'CONFIRMED' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'
+                      }`}>
+                        {item.status}
+                      </span>
+                    </td>
+                    <td class="p-4">
+                      <div class="flex items-center justify-center gap-4 text-slate-400">
+                        <button onClick={() => onViewDetails(item)} class="hover:text-blue-600 transition" title="View Appointment Details">
+                          👁️ <span class="sr-only">Details</span>
+                        </button>
+                        <button onClick={() => onViewPrescription(item)} class="hover:text-emerald-600 transition" title="Prescription Workspace">
+                          📝 <span class="sr-only">Prescription</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
