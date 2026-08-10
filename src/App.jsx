@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Navbar from './components/ui/Navbar';
 import Dashboard from './components/patient/Dashboard';
 import DoctorSearch from './components/patient/DoctorSearch';
 import DoctorDetails from './components/patient/DoctorDetails';
@@ -114,7 +113,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      <Navbar currentView={view} setView={setView} />
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {renderActiveView()}
       </main>
