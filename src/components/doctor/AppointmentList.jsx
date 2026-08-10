@@ -1,3 +1,5 @@
+// src/components/doctor/AppointmentList.jsx
+
 import React, { useState, useEffect } from 'react';
 import { doctorService } from '../../services/api';
 import Alert from '../ui/Alert';
@@ -10,7 +12,6 @@ export default function AppointmentList({ onViewDetails, onViewPrescription }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [status, setStatus] = useState({ loading: false, error: null });
 
-  // Metric State Cards
   const [metrics, setMetrics] = useState({ today: 0, upcoming: 0, pending: 0, cancelled: 0 });
 
   useEffect(() => {
@@ -25,36 +26,33 @@ export default function AppointmentList({ onViewDetails, onViewPrescription }) {
     setStatus({ loading: true, error: null });
     try {
       const res = await doctorService.listAppointments();
-      const data = res.data || [];
+      const data = Array.isArray(res.data) ? res.data : (res.data?.appointments || []);
       setAppointments(data);
       
-      // Compute dashboard summary indicators
       setMetrics({
         today: data.filter(a => a.timeCategory === 'today').length,
-        upcoming: data.filter(a => a.status === 'CONFIRMED').length,
-        pending: data.filter(a => a.status === 'PENDING').length,
-        cancelled: data.filter(a => a.status === 'CANCELLED').length
+        upcoming: data.filter(a => a.status === 'CONFIRMED' || a.appointment_status === 'confirmed').length,
+        pending: data.filter(a => a.status === 'PENDING' || a.appointment_status === 'pending').length,
+        cancelled: data.filter(a => a.status === 'CANCELLED' || a.appointment_status === 'cancelled').length
       });
       setStatus({ loading: false, error: null });
     } catch (err) {
-      setStatus({ loading: false, error: 'Failed to balance metrics streams from server environment.' });
+      setStatus({ loading: false, error: 'Failed to fetch appointment streams from server environment.' });
     }
   };
 
   const filterData = () => {
     let result = [...appointments];
 
-    // Filter by tab mappings
     if (activeTab !== 'All') {
-      result = result.filter(a => a.type?.toLowerCase() === activeTab.toLowerCase());
+      result = result.filter(a => (a.type || a.appointment_type)?.toLowerCase().includes(activeTab.toLowerCase()));
     }
 
-    // Filter by query string values
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(a => 
         a.patientName?.toLowerCase().includes(query) || 
-        a.patientId?.toLowerCase().includes(query) ||
+        a.patientId?.toString().toLowerCase().includes(query) ||
         a.reason?.toLowerCase().includes(query)
       );
     }
@@ -62,35 +60,29 @@ export default function AppointmentList({ onViewDetails, onViewPrescription }) {
   };
 
   return (
-    <div class="space-y-6">
-      {/* Top Cards Section Block */}
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
-          <div class="flex justify-between text-slate-400 text-sm font-medium">Today <span class="text-blue-500 text-base">📅</span></div>
-          <div class="text-3xl font-bold text-slate-800 mt-2">{metrics.today}</div>
-          <div class="text-xs text-emerald-600 font-semibold mt-1">↑ 4 from yesterday</div>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
+          <div className="flex justify-between text-slate-400 text-sm font-medium">Today <span className="text-blue-500 text-base">📅</span></div>
+          <div className="text-3xl font-bold text-slate-800 mt-2">{metrics.today}</div>
         </div>
-        <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
-          <div class="flex justify-between text-slate-400 text-sm font-medium">Upcoming <span class="text-blue-500 text-base">📤</span></div>
-          <div class="text-3xl font-bold text-slate-800 mt-2">{metrics.upcoming}</div>
-          <div class="text-xs text-slate-400 mt-1">Next 7 days</div>
+        <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
+          <div className="flex justify-between text-slate-400 text-sm font-medium">Upcoming <span className="text-blue-500 text-base">📤</span></div>
+          <div className="text-3xl font-bold text-slate-800 mt-2">{metrics.upcoming}</div>
         </div>
-        <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
-          <div class="flex justify-between text-slate-400 text-sm font-medium">Pending <span class="text-amber-500 text-base">📋</span></div>
-          <div class="text-3xl font-bold text-slate-800 mt-2">{metrics.pending}</div>
-          <div class="text-xs text-amber-600 font-semibold mt-1">Requires action</div>
+        <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
+          <div className="flex justify-between text-slate-400 text-sm font-medium">Pending <span className="text-amber-500 text-base">📋</span></div>
+          <div className="text-3xl font-bold text-slate-800 mt-2">{metrics.pending}</div>
         </div>
-        <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
-          <div class="flex justify-between text-slate-400 text-sm font-medium">Cancelled <span class="text-red-500 text-base">❌</span></div>
-          <div class="text-3xl font-bold text-slate-800 mt-2">{metrics.cancelled}</div>
-          <div class="text-xs text-red-500 font-semibold mt-1">-10% from last week</div>
+        <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
+          <div className="flex justify-between text-slate-400 text-sm font-medium">Cancelled <span className="text-red-500 text-base">❌</span></div>
+          <div className="text-3xl font-bold text-slate-800 mt-2">{metrics.cancelled}</div>
         </div>
       </div>
 
-      {/* Interactive Filtering Layer */}
-      <div class="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
-        <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100">
-          <div class="flex gap-2 bg-slate-100 p-1 rounded-lg self-start">
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100">
+          <div className="flex gap-2 bg-slate-100 p-1 rounded-lg self-start">
             {['All', 'Online', 'In-clinic', 'Emergency'].map(tab => (
               <button 
                 key={tab} 
@@ -101,72 +93,64 @@ export default function AppointmentList({ onViewDetails, onViewPrescription }) {
               </button>
             ))}
           </div>
-          <div class="relative w-full sm:w-72">
-            <span class="absolute left-3 top-2.5 text-slate-400 text-xs">🔍</span>
+          <div className="relative w-full sm:w-72">
             <input 
               type="text" 
               placeholder="Search patient name, ID or reason..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              class="w-full pl-8 pr-4 py-2 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="w-full pl-4 pr-4 py-2 border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500"
             />
           </div>
         </div>
 
-        {/* Data Presentation Table Area */}
         <Alert type="error" message={status.error} />
         {status.loading ? <Loader /> : (
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
               <thead>
-                <tr class="bg-slate-50 border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                  <th class="p-4">Patient Name</th>
-                  <th class="p-4">Date & Time</th>
-                  <th class="p-4">Type</th>
-                  <th class="p-4">Reason</th>
-                  <th class="p-4">Status</th>
-                  <th class="p-4 text-center">Actions</th>
+                <tr className="bg-slate-50 border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  <th className="p-4">Patient Name</th>
+                  <th className="p-4">Date & Time</th>
+                  <th className="p-4">Type</th>
+                  <th className="p-4">Reason</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4 text-center">Actions</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-100 text-xs text-slate-700">
+              <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
                 {filteredAppointments.length === 0 ? (
                   <tr>
-                    <td colSpan="6" class="p-8 text-center text-slate-400 font-medium">No matching appointment records found inside database view.</td>
+                    <td colSpan="6" className="p-8 text-center text-slate-400 font-medium">No matching appointment records found inside database view.</td>
                   </tr>
-                ) : filteredAppointments.map(item => (
-                  <tr key={item.id} class="hover:bg-slate-50/80 transition-colors">
-                    <td class="p-4 font-semibold text-slate-800">
-                      <div>{item.patientName}</div>
-                      <div class="text-[10px] text-slate-400 font-normal mt-0.5">ID: {item.patientId}</div>
+                ) : filteredAppointments.map((item, index) => (
+                  <tr key={item.id || `appt-${index}`} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="p-4 font-semibold text-slate-800">
+                      <div>{item.patientName || item.patient_name || 'Patient'}</div>
+                      <div className="text-[10px] text-slate-400 font-normal mt-0.5">ID: {item.patientId || item.patient_id || item.id}</div>
                     </td>
-                    <td class="p-4">
-                      <div>{item.date}</div>
-                      <div class="text-[10px] text-slate-400 mt-0.5">{item.time}</div>
+                    <td className="p-4">
+                      <div>{item.date || item.appointment_date}</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">{item.time || item.appointment_start_time}</div>
                     </td>
-                    <td class="p-4">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
-                        item.type?.toLowerCase() === 'online' ? 'bg-blue-50 text-blue-600' :
-                        item.type?.toLowerCase() === 'emergency' ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-700'
-                      }`}>
-                        {item.type}
+                    <td className="p-4">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-blue-50 text-blue-600">
+                        {item.type || item.appointment_type || 'General'}
                       </span>
                     </td>
-                    <td class="p-4 max-w-xs truncate text-slate-500">{item.reason || 'Routine general clinical assessment checkup.'}</td>
-                    <td class="p-4">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide ${
-                        item.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600' :
-                        item.status === 'CONFIRMED' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'
-                      }`}>
-                        {item.status}
+                    <td className="p-4 max-w-xs truncate text-slate-500">{item.reason || 'Routine clinical assessment checkup.'}</td>
+                    <td className="p-4">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide bg-emerald-50 text-emerald-600">
+                        {item.status || item.appointment_status || 'PENDING'}
                       </span>
                     </td>
-                    <td class="p-4">
-                      <div class="flex items-center justify-center gap-4 text-slate-400">
-                        <button onClick={() => onViewDetails(item)} class="hover:text-blue-600 transition" title="View Appointment Details">
-                          👁️ <span class="sr-only">Details</span>
+                    <td className="p-4">
+                      <div className="flex items-center justify-center gap-4 text-slate-400">
+                        <button onClick={() => onViewDetails(item)} className="hover:text-blue-600 transition" title="View Appointment Details">
+                          👁️
                         </button>
-                        <button onClick={() => onViewPrescription(item)} class="hover:text-emerald-600 transition" title="Prescription Workspace">
-                          📝 <span class="sr-only">Prescription</span>
+                        <button onClick={() => onViewPrescription(item)} className="hover:text-emerald-600 transition" title="Prescription Workspace">
+                          📝
                         </button>
                       </div>
                     </td>
