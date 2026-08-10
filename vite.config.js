@@ -7,13 +7,8 @@ export default defineConfig({
   server: {
     port: 7003,
     strictPort: true,
-    host: true
+    host: true,
+    allowedHosts: 'doctors.docapp.co.in',
   },
-      allowedHosts: ['.docapp.co.in', 'doctors.docapp.co.in'], // Allows Vite to accept requests from your domain
-
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
-    }
-  }
+      
 });
