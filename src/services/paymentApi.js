@@ -19,10 +19,10 @@ paymentApi.interceptors.request.use(injectToken);
 export const paymentService = {
   // Doctor KYC & Onboarding Endpoints
   startOnboarding: (doctorId, payload) =>
-    paymentApi.post(`/api/payment/doctor/${doctorId}/start-onboarding`, payload),
+    paymentApi.post(`/api/kyc/doctor/${doctorId}/start-onboarding`, payload),
 
   getOnboardingStatus: (doctorId) =>
-    paymentApi.get(`/api/payment/doctor/${doctorId}/onboarding-status`),
+    paymentApi.get(`/api/kyc/doctor/${doctorId}/onboarding-status`),
 
   // Patient Payment Order Endpoints (For cross-component verification)
   createOrder: (payload) => paymentApi.post('/api/payment/order', payload),
