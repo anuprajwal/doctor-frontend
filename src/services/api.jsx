@@ -32,9 +32,12 @@ export const doctorService = {
   getDocuments: () => api.get('/api/documents/get-documents'),
   uploadDocument: (formData) => api.post('/api/documents/upload-document', formData),
 
-  // Appointments Flow
+  // Appointments Flow & Prescription Management
   listAppointments: () => api.get('/api/appointment/list-appointments'),
   getPrescription: (appointmentId) => api.get(`/api/appointment/get-prescription-for/${appointmentId}`),
+  
+  // PUT /api/appointment/doctor-update-appointment
+  // Payload: { appointment_id, appointment_status, prescription: [{ drug, qty, timing, notes }] }
   updateAppointment: (payload) => api.put('/api/appointment/doctor-update-appointment', payload),
 
   // Appointment Document Management
