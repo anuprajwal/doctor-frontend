@@ -3,7 +3,7 @@ import { doctorService } from '../../services/api';
 import Alert from '../ui/Alert';
 import Loader from '../ui/Loader';
 
-export default function AppointmentList({ onViewDetails, onViewPrescription }) {
+export default function AppointmentList({ onViewDetails }) {
   const [appointments, setAppointments] = useState([]);
   const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [nextAppointment, setNextAppointment] = useState(null);
@@ -29,7 +29,7 @@ export default function AppointmentList({ onViewDetails, onViewPrescription }) {
 
   const fetchNextAppointment = async () => {
     try {
-      const res = await fetch('https://landing.docapp.co.in/api/appointment/next', {
+      const res = await fetch('https://api.docapp.co.in/api/appointment/next', {
         headers: { Authorization: `Bearer ${getCookie('auth_token')}` }
       });
       if (res.ok) {
@@ -37,7 +37,7 @@ export default function AppointmentList({ onViewDetails, onViewPrescription }) {
         setNextAppointment(data?.appointment || data);
       }
     } catch (err) {
-      console.warn("Could not fetch immediate next appointment:", err);
+      console.warn("Could not fetch next appointment summary:", err);
     }
   };
 
@@ -47,7 +47,6 @@ export default function AppointmentList({ onViewDetails, onViewPrescription }) {
       const res = await doctorService.listAppointments();
       const data = Array.isArray(res.data) ? res.data : (res.data?.appointments || []);
       
-      // Filter out pending and cancelled records per criteria
       const validAppointments = data.filter(a => {
         const s = (a.appointment_status || a.status || '').toLowerCase();
         return s !== 'pending' && s !== 'cancelled';
@@ -63,7 +62,7 @@ export default function AppointmentList({ onViewDetails, onViewPrescription }) {
       });
       setStatus({ loading: false, error: null });
     } catch (err) {
-      setStatus({ loading: false, error: 'Failed to fetch appointments stream.' });
+      setStatus({ loading: false, error: 'Failed to fetch appointments list.' });
     }
   };
 
@@ -112,14 +111,15 @@ export default function AppointmentList({ onViewDetails, onViewPrescription }) {
           </div>
           <button 
             onClick={() => onViewDetails(nextAppointment)}
+            type="button"
             className="px-3 py-1.5 bg-white text-blue-600 hover:bg-blue-50 text-xs font-bold rounded-lg transition shadow-sm"
           >
-            Start / View Details
+            View Details
           </button>
         </div>
       )}
 
-      {/* Simplified Metrics Grid */}
+      {/* Metrics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
           <div className="flex justify-between text-slate-400 text-sm font-medium">Total Appointments <span className="text-blue-500 text-base">📋</span></div>
@@ -147,6 +147,7 @@ export default function AppointmentList({ onViewDetails, onViewPrescription }) {
               <button 
                 key={tab} 
                 onClick={() => setActiveTab(tab)}
+                type="button"
                 className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${activeTab === tab ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/60'}`}
               >
                 {tab === 'All' ? 'All Appointments' : tab}
@@ -210,11 +211,13 @@ export default function AppointmentList({ onViewDetails, onViewPrescription }) {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center justify-center gap-4 text-slate-400">
-                        <button onClick={() => onViewDetails(item)} className="hover:text-blue-600 transition" title="View Details">
+                        <button 
+                          onClick={() => onViewDetails(item)} 
+                          type="button"
+                          className="hover:text-blue-600 transition" 
+                          title="View Details"
+                        >
                           👁️
-                        </button>
-                        <button onClick={() => onViewPrescription(item)} className="hover:text-emerald-600 transition" title="Prescription Workspace">
-                          📝
                         </button>
                       </div>
                     </td>
