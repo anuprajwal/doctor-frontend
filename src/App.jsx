@@ -28,7 +28,7 @@ export default function App() {
       <header class="bg-white border-b border-slate-200/60 shadow-sm sticky top-0 z-50 print:hidden">
         <div class="max-w-7xl mx-auto px-4 flex items-center justify-between h-16">
           <div class="flex items-center gap-2 font-bold text-slate-800 text-base cursor-pointer" onClick={() => setCurrentTab('appointments')}>
-            <span class="text-blue-600 text-xl">🧬</span> MedPortal <span class="text-xs font-bold text-slate-400 border border-slate-200 rounded px-1.5 py-0.5 bg-slate-50">Doctor</span>
+            <span class="text-blue-600 text-xl">🧬</span> DocApp <span class="text-xs font-bold text-slate-400 border border-slate-200 rounded px-1.5 py-0.5 bg-slate-50">Doctor</span>
           </div>
           
           <nav class="flex gap-6 text-xs font-bold text-slate-500">
