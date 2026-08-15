@@ -15,7 +15,9 @@ export default function ProfileCompletion() {
     profile_picture: '',
     specialization: '',
     license_number: '',
-    experience_years: ''
+    experience_years: '',
+    doctorProfileId: ''
+
   });
 
   const [bankData, setBankData] = useState({ 
@@ -54,7 +56,8 @@ export default function ProfileCompletion() {
         profile_picture: profile.profile_picture || '',
         specialization: profile.specialization || '',
         license_number: profile.license_number || '',
-        experience_years: profile.experience_years ? String(profile.experience_years) : ''
+        experience_years: profile.experience_years ? String(profile.experience_years) : '',
+        doctorProfileId: profile.id || ''
       });
 
       // Populate banking form if available on doctorProfile
@@ -203,7 +206,7 @@ export default function ProfileCompletion() {
       </div>
 
       {/* 2. Razorpay Banking KYC Verification */}
-      <DoctorKycSection doctorId={formData.doctorProfile.id || '4'} />
+      <DoctorKycSection doctorId={formData.doctorProfileId} />
 
       {/* 3. Bank Details Section */}
       <div className="bg-white border border-slate-200/80 shadow-sm rounded-xl p-8">
