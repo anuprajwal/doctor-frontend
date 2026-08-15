@@ -65,7 +65,7 @@ export default function DoctorKycAndBankingPage() {
       const res = await doctorService.getUserData();
       const user = res.data?.userData || {};
       const profile = user.doctorProfile || {};
-      const currentDoctorId = profile.id || user.id;
+      const currentDoctorId = user.id;
 
       if (currentDoctorId) {
         setDoctorId(currentDoctorId);
