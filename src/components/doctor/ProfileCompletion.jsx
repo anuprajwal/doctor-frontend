@@ -113,10 +113,20 @@ export default function ProfileCompletion() {
   };
 
   // Profile Update Submission
+  // Profile Update Submission
   const handleProfileUpdate = async () => {
     setStatus({ loading: true, error: null, success: null });
     try {
-      await doctorService.updateProfile(formData);
+      const payload = {
+        date_of_birth: formData.date_of_birth,
+        gender: formData.gender,
+        profile_picture: formData.profile_picture || '',
+        specialization: formData.specialization,
+        license_number: formData.license_number,
+        experience_years: Number(formData.experience_years) || 0
+      };
+
+      await doctorService.updateProfile(payload);
       setStatus({ loading: false, error: null, success: 'Profile details updated successfully.' });
     } catch (err) {
       setStatus({ loading: false, error: err.response?.data?.message || 'Failed to update profile.', success: null });
@@ -321,8 +331,8 @@ export default function ProfileCompletion() {
             )}
           </div>
 
-          <InputField label="License Number" name="license_number" value={formData.license_number} readOnly />
-          <InputField label="Years of Experience" name="experience_years" value={formData.experience_years} readOnly />
+          <InputField label="License Number" name="license_number" value={formData.license_number} />
+          <InputField label="Years of Experience" name="experience_years" value={formData.experience_years} />
         </div>
       </div>
 
