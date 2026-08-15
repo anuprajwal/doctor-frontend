@@ -27,7 +27,7 @@ export const doctorService = {
   updateExtraInfo: (data) => authApi.put('/api/auth/profile/complete/extra-doc-info', data),
   sendEmailOtp: (email) => verifyApi.post('/api/verify/sendEmailOtp', { email }),
   sendMobileOtp: (phoneNumber) => verifyApi.post('/api/verify/sendMobileOtp', { phoneNumber }),
-  verifyOtp: (payload) => verifyApi.post('/api/verify/verifyEmailMobile', payload),
+  verifyOtp: (payload) => verifyApi.put('/api/verify/verifyEmailMobile', payload),
 
   // Verification Documents
   getDocuments: () => api.get('/api/documents/get-documents'),
