@@ -6,6 +6,7 @@ import AppointmentList from './components/doctor/AppointmentList';
 import AppointmentDetails from './components/doctor/AppointmentDetails';
 import PrescriptionWorkspace from './components/doctor/PrescriptionWorkspace';
 import HospitalSearch from './components/doctor/HospitalSearch';
+import DoctorKycSection from './components/doctor/DoctorKycSection';
 import NotFound from './pages/NotFound';
 
 export default function App() {
@@ -57,6 +58,12 @@ export default function App() {
               Verification Documents
             </button>
             <button 
+              onClick={() => setCurrentTab('KYC Details')} 
+              className={`pb-1 transition-all ${currentTab === 'KYC Details' ? 'border-b-2 border-blue-600 text-blue-600' : 'hover:text-slate-800'}`}
+            >
+              KYC Details
+            </button>
+            <button 
               onClick={() => setCurrentTab('schedule')} 
               className={`pb-1 transition-all ${currentTab === 'schedule' ? 'border-b-2 border-blue-600 text-blue-600' : 'hover:text-slate-800'}`}
             >
@@ -95,6 +102,7 @@ export default function App() {
         {currentTab === 'profile' && <ProfileCompletion />}
         {currentTab === 'documents' && <DocumentUpload />}
         {currentTab === 'schedule' && <ScheduleConfiguration />}
+        {currentTab === 'KYC Details' && <DoctorKycSection />}
         {currentTab === '404' && <NotFound />}
       </main>
 
