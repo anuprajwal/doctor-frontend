@@ -331,8 +331,30 @@ export default function ProfileCompletion() {
             )}
           </div>
 
-          <InputField label="License Number" name="license_number" value={formData.license_number} />
-          <InputField label="Years of Experience" name="experience_years" value={formData.experience_years} />
+          <InputField label="License Number" name="license_number" onChange={handleInputChange} value={formData.license_number} />
+          <InputField label="Years of Experience" name="experience_years" onChange={handleInputChange} value={formData.experience_years} />
+          <InputField 
+            label="Date of Birth" 
+            type="date" 
+            name="date_of_birth" 
+            value={formData.date_of_birth} 
+            onChange={handleInputChange} 
+          />
+
+          <div className="space-y-1">
+            <label className="block text-xs font-semibold text-slate-600">Gender</label>
+            <select
+              name="gender"
+              value={formData.gender}
+              onChange={handleInputChange}
+              className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-blue-500 bg-white"
+            >
+              <option value="">Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
         </div>
       </div>
 
