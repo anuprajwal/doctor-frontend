@@ -142,8 +142,8 @@ export default function ProfileCompletion() {
   const handleVerifyOtp = async (type) => {
     try {
       const payload = type === 'email' 
-        ? { email: formData.email, otp: otpState.emailOtp }
-        : { phoneNumber: formData.phone_number, otp: otpState.phoneOtp };
+        ? { email: formData.email, userOtp: otpState.emailOtp }
+        : { phoneNumber: formData.phone_number, userOtp: otpState.phoneOtp };
       
       await doctorService.verifyOtp(payload);
       
