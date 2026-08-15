@@ -20,6 +20,7 @@ const injectToken = (config) => {
 
 export const doctorService = {
   // Profile & Verification Actions
+  getUserData: () => authApi.get('/api/auth/get-user-data'),
   updateProfile: (data) => authApi.post('/api/auth/profile/complete/doctor', data),
   uploadPhoto: (formData) => authApi.post('/api/auth/upload-photo', formData),
   deletePhoto: () => authApi.delete('/api/auth/delete-profile-pic'),
