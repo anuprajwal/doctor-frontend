@@ -8,7 +8,7 @@ import Loader from '../ui/Loader';
 export default function DoctorKycAndBankingPage() {
   const [doctorId, setDoctorId] = useState(null);
   const [pageLoading, setPageLoading] = useState(true);
-  const [kycStatus, setKycStatus] = useState('unsubmitted'); // unsubmitted | pending | verified | rejected
+  const [kycStatus, setKycStatus] = useState('unsubmitted'); // 'unsubmitted' | 'pending' | 'verified' | 'rejected'
   const [actionLoading, setActionLoading] = useState(false);
   const [status, setStatus] = useState({ error: null, success: null });
 
@@ -38,52 +38,65 @@ export default function DoctorKycAndBankingPage() {
     ifsc_code: ''
   });
 
-  // 1. Fetch Doctor Profile & Bank Data internally on page load
-  const loadDoctorProfileData = async () => {
-    setPageLoading(true);
-    try {
-      const res = await doctorService.getUserData();
-      const user = res.data?.userData || {};
-      const profile = user.doctorProfile || {};
-      const userId = user.id;
-
-      if (userId) {
-        setDoctorId(userId);
-        
-        // Populate initial bank details from profile
-        setBankData({
-          account_number: profile.account_number || '',
-          beneficiary_name: profile.beneficiary_name || '',
-          ifsc_code: profile.ifsc_code || ''
-        });
-
-        // Set initial KYC status from profile if available
-        if (profile.kyc_status) {
-          setKycStatus(profile.kyc_status);
-        }
-
-        // Fetch live onboarding status from payment gateway
-        await fetchLiveKycStatus(profileId);
-      }
-    } catch (err) {
-      setStatus({ 
-        error: err.response?.data?.message || 'Failed to retrieve profile banking parameters.', 
-        success: null 
-      });
-    } finally {
-      setPageLoading(false);
-    }
-  };
-
   const fetchLiveKycStatus = async (id) => {
     try {
       const res = await paymentService.getOnboardingStatus(id);
       if (res.data?.success) {
         const currentStatus = res.data.kyc_status || res.data.account?.kyc?.status || 'pending';
         setKycStatus(currentStatus);
+      } else {
+        setKycStatus('unsubmitted');
       }
-    } catch {
-      // Retain existing profile status if external check fails
+    } catch (err) {
+      // If 401 or "Doctor not onboarded yet", explicitly set to unsubmitted so form displays
+      if (err.response?.status === 401 || err.response?.data?.message?.toLowerCase().includes('not onboarded')) {
+        setKycStatus('unsubmitted');
+      } else {
+        setKycStatus('unsubmitted');
+      }
+    }
+  };
+
+  // 1. Fetch Doctor Profile & Bank Data internally on page load
+  const loadDoctorProfileData = async () => {
+    setPageLoading(true);
+    setStatus({ error: null, success: null });
+    try {
+      const res = await doctorService.getUserData();
+      const user = res.data?.userData || {};
+      const profile = user.doctorProfile || {};
+      const currentDoctorId = profile.id || user.id;
+
+      if (currentDoctorId) {
+        setDoctorId(currentDoctorId);
+        
+        // Populate initial bank details
+        setBankData({
+          account_number: profile.account_number || '',
+          beneficiary_name: profile.beneficiary_name || '',
+          ifsc_code: profile.ifsc_code || ''
+        });
+
+        // Pre-fill parts of KYC form from profile
+        setKycForm(prev => ({
+          ...prev,
+          contact_name: user.username || prev.contact_name,
+          beneficiary_name: profile.beneficiary_name || prev.beneficiary_name,
+          account_number: profile.account_number || prev.account_number,
+          ifsc_code: profile.ifsc_code || prev.ifsc_code
+        }));
+
+        // Immediately check live onboarding status
+        await fetchLiveKycStatus(currentDoctorId);
+      }
+    } catch (err) {
+      setStatus({ 
+        error: err.response?.data?.message || 'Failed to retrieve profile banking parameters.', 
+        success: null 
+      });
+      setKycStatus('unsubmitted');
+    } finally {
+      setPageLoading(false);
     }
   };
 
@@ -137,7 +150,7 @@ export default function DoctorKycAndBankingPage() {
 
   if (pageLoading) {
     return (
-      <div className="py-20 flex justify-center">
+      <div className="py-24 flex justify-center">
         <Loader />
       </div>
     );
