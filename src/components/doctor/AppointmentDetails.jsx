@@ -8,7 +8,7 @@ import PrescriptionWorkspace from './PrescriptionWorkspace';
 import { 
   ArrowLeft, Phone, CheckCircle2, User, Mail, Calendar, 
   Clock, Video, MapPin, Upload, FileText, Trash2, Eye, GitBranch 
-} from 'lucide-react';
+} from '../ui/Icons';
 
 export default function AppointmentDetails({ appointment, onBack }) {
   const [documents, setDocuments] = useState([]);
