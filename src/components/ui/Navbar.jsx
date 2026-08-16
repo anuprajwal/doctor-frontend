@@ -31,7 +31,6 @@ export default function Navbar({ currentTab, setCurrentTab }) {
           className="flex items-center gap-2 font-bold text-slate-800 text-base cursor-pointer" 
           onClick={() => setCurrentTab('appointments')}
         >
-          <span className="text-blue-600 text-xl">🧬</span> 
           <span>DocApp</span> 
           <span className="text-xs font-bold text-slate-400 border border-slate-200 rounded px-1.5 py-0.5 bg-slate-50">
             Doctor Portal

@@ -131,3 +131,63 @@ export const ChevronRight = (props) => (
     <polyline points="9 18 15 12 9 6" />
   </svg>
 );
+
+
+// Append to src/components/ui/Icons.jsx
+
+export const Building2 = (props) => (
+  <svg viewBox="0 0 24 24" {...defaultProps} {...props}>
+    <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
+    <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" />
+    <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2" />
+    <path d="M10 6h4" />
+    <path d="M10 10h4" />
+    <path d="M10 14h4" />
+    <path d="M10 18h4" />
+  </svg>
+);
+
+export const Search = (props) => (
+  <svg viewBox="0 0 24 24" {...defaultProps} {...props}>
+    <circle cx="11" cy="11" r="8" />
+    <line x1="21" x2="16.65" y1="21" y2="16.65" />
+  </svg>
+);
+
+export const ChevronLeft = (props) => (
+  <svg viewBox="0 0 24 24" {...defaultProps} {...props}>
+    <polyline points="15 18 9 12 15 6" />
+  </svg>
+);
+
+export const ShieldCheck = (props) => (
+  <svg viewBox="0 0 24 24" {...defaultProps} {...props}>
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    <path d="m9 12 2 2 4-4" />
+  </svg>
+);
+
+export const Stethoscope = (props) => (
+  <svg viewBox="0 0 24 24" {...defaultProps} {...props}>
+    <path d="M4.5 3v5a3.5 3.5 0 0 0 7 0V3" />
+    <path d="M8 12v3a5 5 0 0 0 10 0V9" />
+    <circle cx="18" cy="7" r="2" />
+    <path d="M3 3h3" />
+    <path d="M10 3h3" />
+  </svg>
+);
+
+export const Globe = (props) => (
+  <svg viewBox="0 0 24 24" {...defaultProps} {...props}>
+    <circle cx="12" cy="12" r="10" />
+    <line x1="2" x2="22" y1="12" y2="12" />
+    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+  </svg>
+);
+
+export const Award = (props) => (
+  <svg viewBox="0 0 24 24" {...defaultProps} {...props}>
+    <circle cx="12" cy="8" r="6" />
+    <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" />
+  </svg>
+);

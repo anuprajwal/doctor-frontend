@@ -8,16 +8,23 @@ import ScheduleConfiguration from './components/doctor/ScheduleConfiguration';
 import AppointmentList from './components/doctor/AppointmentList';
 import AppointmentDetails from './components/doctor/AppointmentDetails';
 import HospitalSearch from './components/doctor/HospitalSearch';
+import HospitalDetailPage from './components/doctor/HospitalDetailPage';
 import DoctorKycSection from './components/doctor/DoctorKycSection';
 import NotFound from './pages/NotFound';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState('appointments');
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [selectedHospital, setSelectedHospital] = useState(null);
 
-  const handleTransitionToDetails = (appointment) => {
+  const handleTransitionToAppointmentDetails = (appointment) => {
     setSelectedAppointment(appointment);
     setCurrentTab('appointment-detail');
+  };
+
+  const handleTransitionToHospitalDetails = (hospital) => {
+    setSelectedHospital(hospital);
+    setCurrentTab('hospital-detail');
   };
 
   return (
@@ -28,7 +35,7 @@ export default function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 print:p-0">
         {currentTab === 'appointments' && (
           <AppointmentList 
-            onViewDetails={handleTransitionToDetails} 
+            onViewDetails={handleTransitionToAppointmentDetails} 
           />
         )}
         {currentTab === 'appointment-detail' && selectedAppointment && (
@@ -37,7 +44,17 @@ export default function App() {
             onBack={() => setCurrentTab('appointments')} 
           />
         )}
-        {currentTab === 'hospitals' && <HospitalSearch />}
+        {currentTab === 'hospitals' && (
+          <HospitalSearch 
+            onViewHospital={handleTransitionToHospitalDetails} 
+          />
+        )}
+        {currentTab === 'hospital-detail' && selectedHospital && (
+          <HospitalDetailPage 
+            hospital={selectedHospital} 
+            onBack={() => setCurrentTab('hospitals')} 
+          />
+        )}
         {currentTab === 'profile' && <ProfileCompletion />}
         {currentTab === 'documents' && <DocumentUpload />}
         {currentTab === 'schedule' && <ScheduleConfiguration />}
