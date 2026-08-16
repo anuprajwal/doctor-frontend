@@ -4,8 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { doctorService } from '../../services/api';
 import Alert from '../ui/Alert';
 import Loader from '../ui/Loader';
-import { GitBranch, Calendar, Clock, ChevronRight, Eye } from 'lucide-react';
-
+import { GitBranch, Calendar, Clock, ChevronRight, Eye } from '../ui/Icons';
 export default function AppointmentList({ onViewDetails }) {
   const [appointments, setAppointments] = useState([]);
   const [filteredAppointments, setFilteredAppointments] = useState([]);

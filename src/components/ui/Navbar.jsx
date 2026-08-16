@@ -1,7 +1,7 @@
 // src/components/ui/Navbar.jsx
 
 import React from 'react';
-import { LogOut } from 'lucide-react';
+import { LogOut } from '/Icons';
 
 export default function Navbar({ currentTab, setCurrentTab }) {
   const handleLogout = () => {
