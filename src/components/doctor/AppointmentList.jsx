@@ -1,7 +1,10 @@
+// src/components/doctor/AppointmentList.jsx
+
 import React, { useState, useEffect } from 'react';
 import { doctorService } from '../../services/api';
 import Alert from '../ui/Alert';
 import Loader from '../ui/Loader';
+import { GitBranch, Calendar, Clock, ChevronRight, Eye } from 'lucide-react';
 
 export default function AppointmentList({ onViewDetails }) {
   const [appointments, setAppointments] = useState([]);
@@ -122,7 +125,7 @@ export default function AppointmentList({ onViewDetails }) {
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
-          <div className="flex justify-between text-slate-400 text-sm font-medium">Total Appointments <span className="text-blue-500 text-base">📋</span></div>
+          <div className="flex justify-between text-slate-400 text-sm font-medium">Total Consultations <span className="text-blue-500 text-base">📋</span></div>
           <div className="text-3xl font-bold text-slate-800 mt-2">{metrics.total}</div>
         </div>
         <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
@@ -167,64 +170,124 @@ export default function AppointmentList({ onViewDetails }) {
 
         <Alert type="error" message={status.error} />
         {status.loading ? <Loader /> : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                  <th className="p-4">Patient Name</th>
-                  <th className="p-4">Date & Time</th>
-                  <th className="p-4">Type</th>
-                  <th className="p-4">Payment</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
-                {filteredAppointments.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="p-8 text-center text-slate-400 font-medium">No matching appointment records found.</td>
-                  </tr>
-                ) : filteredAppointments.map((item) => (
-                  <tr key={`appt-${item.id}`} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-4 font-semibold text-slate-800">
-                      <div>{item.patient?.username || item.patientName || 'Patient'}</div>
-                      <div className="text-[10px] text-slate-400 font-normal mt-0.5">{item.patient?.email || `ID: ${item.id}`}</div>
-                    </td>
-                    <td className="p-4">
-                      <div>{item.appointment_date ? new Date(item.appointment_date).toLocaleDateString() : item.date}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">{item.appointment_start_time || item.time} - {item.appointment_end_time || ''}</div>
-                    </td>
-                    <td className="p-4">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-blue-50 text-blue-600">
-                        {item.appointment_type || item.type || 'General'}
-                      </span>
-                    </td>
-                    <td className="p-4 uppercase text-[10px] font-bold text-slate-500">
-                      {item.payment_mode || 'Card'}
-                    </td>
-                    <td className="p-4">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase ${
-                        ['completed', 'closed'].includes((item.appointment_status || item.status || '').toLowerCase()) ? 'bg-purple-50 text-purple-600' : 'bg-emerald-50 text-emerald-600'
+          <div className="p-4 space-y-4">
+            {filteredAppointments.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 font-medium border border-dashed rounded-xl bg-slate-50/50">
+                No matching appointment records found.
+              </div>
+            ) : filteredAppointments.map((item) => {
+              const checkups = Array.isArray(item.checkupAppointment) ? item.checkupAppointment : [];
+              const dateFormatted = item.appointment_date 
+                ? new Date(item.appointment_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) 
+                : item.date;
+
+              return (
+                <div key={`appointment-row-${item.id}`} className="relative">
+                  {/* Primary Appointment Row Node */}
+                  <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm hover:shadow-md transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm border border-blue-100 flex-shrink-0">
+                        {item.patient?.username?.charAt(0)?.toUpperCase() || 'P'}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
+                            #{item.id} Primary
+                          </span>
+                          <h4 className="font-bold text-slate-800 text-sm">
+                            {item.patient?.username || item.patientName || 'Patient Record'}
+                          </h4>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1">
+                          <span className="flex items-center gap-1 font-medium">
+                            <Calendar className="w-3.5 h-3.5 text-slate-400" /> {dateFormatted}
+                          </span>
+                          <span className="flex items-center gap-1 font-medium">
+                            <Clock className="w-3.5 h-3.5 text-slate-400" /> {item.appointment_start_time?.substring(0, 5)} - {item.appointment_end_time?.substring(0, 5)}
+                          </span>
+                          <span className="uppercase text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                            {item.appointment_type || item.type || 'Online'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase ${
+                        ['completed', 'closed'].includes((item.appointment_status || item.status || '').toLowerCase())
+                          ? 'bg-purple-50 text-purple-600 border border-purple-200'
+                          : 'bg-emerald-50 text-emerald-600 border border-emerald-200'
                       }`}>
                         {item.appointment_status || item.status}
                       </span>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center justify-center gap-4 text-slate-400">
-                        <button 
-                          onClick={() => onViewDetails(item)} 
-                          type="button"
-                          className="hover:text-blue-600 transition" 
-                          title="View Details"
-                        >
-                          👁️
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      <button
+                        onClick={() => onViewDetails(item)}
+                        type="button"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-bold rounded-lg transition"
+                      >
+                        <Eye className="w-3.5 h-3.5" /> Details
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Branch Hierarchy Connecting Lines for Checkup Appointments */}
+                  {checkups.length > 0 && (
+                    <div className="ml-6 sm:ml-10 relative mt-2 space-y-2">
+                      <div className="absolute -top-3 bottom-4 left-0 w-0.5 border-l-2 border-dashed border-emerald-400" />
+                      {checkups.map((checkup) => {
+                        const checkupDateFormatted = checkup.checkup_date 
+                          ? new Date(checkup.checkup_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) 
+                          : 'N/A';
+
+                        return (
+                          <div key={`checkup-sub-${checkup.id}`} className="relative flex items-center">
+                            <div className="w-6 sm:w-8 h-0.5 border-b-2 border-dashed border-emerald-400" />
+                            <div 
+                              onClick={() => onViewDetails(item)}
+                              className="flex-1 bg-emerald-50/80 border border-emerald-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer hover:bg-emerald-100/70 transition shadow-sm"
+                            >
+                              <div className="flex items-center gap-2.5">
+                                <div className="p-1.5 bg-emerald-600 text-white rounded-lg">
+                                  <GitBranch className="w-3.5 h-3.5" />
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded">
+                                      Checkup #{checkup.id}
+                                    </span>
+                                    <span className="text-xs font-bold text-slate-800">
+                                      Follow-up Session
+                                    </span>
+                                    {checkup.is_payment_required === false && (
+                                      <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded border border-emerald-300">
+                                        FREE
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-3 text-xs text-slate-600 mt-0.5">
+                                    <span>{checkupDateFormatted}</span>
+                                    <span>{checkup.checkup_start_time?.substring(0, 5)} - {checkup.checkup_end_time?.substring(0, 5)}</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-white text-emerald-700 border border-emerald-200">
+                                  {checkup.checkup_status || 'Confirmed'}
+                                </span>
+                                <span className="text-xs font-bold text-emerald-700 flex items-center">
+                                  Manage <ChevronRight className="w-3.5 h-3.5" />
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
