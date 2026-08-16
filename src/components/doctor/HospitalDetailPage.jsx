@@ -49,7 +49,7 @@ export default function HospitalDetailPage({ hospital, onBack }) {
   const handleSendJoinRequest = async () => {
     setStatus({ loading: true, error: null, success: null });
     try {
-      await doctorService.requestAdmission(hospital.user_id);
+      await doctorService.requestAdmission(hospital.id);
       setStatus({ 
         loading: false, 
         error: null, 
