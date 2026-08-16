@@ -26,10 +26,10 @@ export default function HospitalDetailPage({ hospital, onBack }) {
   const [status, setStatus] = useState({ loading: false, error: null, success: null });
 
   useEffect(() => {
-    if (hospital?.id) {
-      fetchDoctors(hospital.id, docOffset);
+    if (hospital?.user_id) {
+      fetchDoctors(hospital.user_id, docOffset);
     }
-  }, [hospital?.id, docOffset]);
+  }, [hospital?.user_id, docOffset]);
 
   const fetchDoctors = async (orgId, currentDocOffset) => {
     setLoadingDoctors(true);
@@ -49,7 +49,7 @@ export default function HospitalDetailPage({ hospital, onBack }) {
   const handleSendJoinRequest = async () => {
     setStatus({ loading: true, error: null, success: null });
     try {
-      await doctorService.requestAdmission(hospital.id);
+      await doctorService.requestAdmission(hospital.user_id);
       setStatus({ 
         loading: false, 
         error: null, 
