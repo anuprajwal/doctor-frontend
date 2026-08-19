@@ -12,6 +12,11 @@ import HospitalDetailPage from './components/doctor/HospitalDetailPage';
 import DoctorKycSection from './components/doctor/DoctorKycSection';
 import NotFound from './pages/NotFound';
 
+// HERE THERE IS A CHANGE MADE: Integrated WebRTC Provider & Modals
+import { CallProvider } from './context/CallContext';
+import IncomingCallModal from './components/calling/IncomingCallModal';
+import VideoCallModal from './components/calling/VideoCallModal';
+
 export default function App() {
   const [currentTab, setCurrentTab] = useState('appointments');
   const [selectedAppointment, setSelectedAppointment] = useState(null);
@@ -28,43 +33,50 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 print:bg-white">
-      <Navbar currentTab={currentTab} setCurrentTab={setCurrentTab} />
+    // HERE THERE IS A CHANGE MADE: Wrapped entire layout in CallProvider
+    <CallProvider>
+      <div className="min-h-screen flex flex-col bg-slate-50 print:bg-white">
+        <Navbar currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
-      {/* Main Dynamic Viewport */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 print:p-0">
-        {currentTab === 'appointments' && (
-          <AppointmentList 
-            onViewDetails={handleTransitionToAppointmentDetails} 
-          />
-        )}
-        {currentTab === 'appointment-detail' && selectedAppointment && (
-          <AppointmentDetails 
-            appointment={selectedAppointment} 
-            onBack={() => setCurrentTab('appointments')} 
-          />
-        )}
-        {currentTab === 'hospitals' && (
-          <HospitalSearch 
-            onViewHospital={handleTransitionToHospitalDetails} 
-          />
-        )}
-        {currentTab === 'hospital-detail' && selectedHospital && (
-          <HospitalDetailPage 
-            hospital={selectedHospital} 
-            onBack={() => setCurrentTab('hospitals')} 
-          />
-        )}
-        {currentTab === 'profile' && <ProfileCompletion />}
-        {currentTab === 'documents' && <DocumentUpload />}
-        {currentTab === 'schedule' && <ScheduleConfiguration />}
-        {currentTab === 'KYC Details' && <DoctorKycSection />}
-        {currentTab === '404' && <NotFound />}
-      </main>
+        {/* Main Dynamic Viewport */}
+        <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 print:p-0">
+          {currentTab === 'appointments' && (
+            <AppointmentList 
+              onViewDetails={handleTransitionToAppointmentDetails} 
+            />
+          )}
+          {currentTab === 'appointment-detail' && selectedAppointment && (
+            <AppointmentDetails 
+              appointment={selectedAppointment} 
+              onBack={() => setCurrentTab('appointments')} 
+            />
+          )}
+          {currentTab === 'hospitals' && (
+            <HospitalSearch 
+              onViewHospital={handleTransitionToHospitalDetails} 
+            />
+          )}
+          {currentTab === 'hospital-detail' && selectedHospital && (
+            <HospitalDetailPage 
+              hospital={selectedHospital} 
+              onBack={() => setCurrentTab('hospitals')} 
+            />
+          )}
+          {currentTab === 'profile' && <ProfileCompletion />}
+          {currentTab === 'documents' && <DocumentUpload />}
+          {currentTab === 'schedule' && <ScheduleConfiguration />}
+          {currentTab === 'KYC Details' && <DoctorKycSection />}
+          {currentTab === '404' && <NotFound />}
+        </main>
 
-      <footer className="bg-white border-t border-slate-100 py-4 text-center text-[10px] text-slate-400 font-semibold print:hidden">
-        © 2026 MedPlatform Health Systems. HIPAA Compliant Interface Base Integration Layer.
-      </footer>
-    </div>
+        <footer className="bg-white border-t border-slate-100 py-4 text-center text-[10px] text-slate-400 font-semibold print:hidden">
+          © 2026 MedPlatform Health Systems. HIPAA Compliant Interface Base Integration Layer.
+        </footer>
+
+        {/* HERE THERE IS A CHANGE MADE: Global Call Modals mounted at root */}
+        <IncomingCallModal />
+        <VideoCallModal />
+      </div>
+    </CallProvider>
   );
 }
