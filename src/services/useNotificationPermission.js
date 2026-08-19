@@ -1,5 +1,3 @@
-// src/utils/useNotificationPermission.js
-
 import { useEffect, useRef } from 'react';
 import { initializeApp, getApps } from 'firebase/app';
 import { getMessaging, getToken } from 'firebase/messaging';
@@ -23,7 +21,10 @@ export const useNotificationPermission = () => {
 
   const saveTokenToBackend = async (token) => {
     const authToken = getAuthToken();
-    if (!authToken) return;
+    if (!authToken) {
+      console.warn('[FCM] No auth_token found in cookie.');
+      return;
+    }
 
     try {
       const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.docapp.co.in';
@@ -39,22 +40,19 @@ export const useNotificationPermission = () => {
         }),
       });
 
-      if (!response.ok) {
-        console.warn('Failed to register FCM token with server:', response.status);
-      }
+      console.log('[FCM] Backend save response:', response.status);
     } catch (err) {
-      console.error('Error saving notification token:', err);
+      console.error('[FCM] Error saving token to backend:', err);
     }
   };
 
   const requestAndSaveToken = async () => {
-    if (isSyncing.current || !('Notification' in window)) return;
+    if (isSyncing.current || !('Notification' in window) || !('serviceWorker' in navigator)) return;
     isSyncing.current = true;
 
     try {
       let permission = Notification.permission;
 
-      // Always prompt if not yet granted
       if (permission !== 'granted') {
         permission = await Notification.requestPermission();
       }
@@ -63,33 +61,27 @@ export const useNotificationPermission = () => {
         const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
         const messaging = getMessaging(app);
 
+        // Explicitly register the service worker from the root public directory
+        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+
         const currentToken = await getToken(messaging, {
           vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+          serviceWorkerRegistration: registration,
         });
 
         if (currentToken) {
+          console.log('[FCM] Token retrieved successfully:', currentToken);
           await saveTokenToBackend(currentToken);
         }
       }
     } catch (error) {
-      console.warn('Notification permission or token retrieval failed:', error);
+      console.error('[FCM] Token registration failed:', error);
     } finally {
       isSyncing.current = false;
     }
   };
 
   useEffect(() => {
-    // Check and prompt on component mount
     requestAndSaveToken();
-
-    // Re-prompt whenever the user focuses back onto the window if permission is not granted
-    const handleFocus = () => {
-      if (Notification.permission !== 'granted') {
-        requestAndSaveToken();
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 };
