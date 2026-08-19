@@ -12,12 +12,15 @@ import HospitalDetailPage from './components/doctor/HospitalDetailPage';
 import DoctorKycSection from './components/doctor/DoctorKycSection';
 import NotFound from './pages/NotFound';
 
-// HERE THERE IS A CHANGE MADE: Integrated WebRTC Provider & Modals
 import { CallProvider } from './context/CallContext';
 import IncomingCallModal from './components/calling/IncomingCallModal';
 import VideoCallModal from './components/calling/VideoCallModal';
+import { useNotificationPermission } from './services/useNotificationPermission';
 
 export default function App() {
+  // Prompts user for notification permission and registers the FCM token
+  useNotificationPermission();
+
   const [currentTab, setCurrentTab] = useState('appointments');
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [selectedHospital, setSelectedHospital] = useState(null);
@@ -33,7 +36,6 @@ export default function App() {
   };
 
   return (
-    // HERE THERE IS A CHANGE MADE: Wrapped entire layout in CallProvider
     <CallProvider>
       <div className="min-h-screen flex flex-col bg-slate-50 print:bg-white">
         <Navbar currentTab={currentTab} setCurrentTab={setCurrentTab} />
@@ -73,7 +75,6 @@ export default function App() {
           © 2026 MedPlatform Health Systems. HIPAA Compliant Interface Base Integration Layer.
         </footer>
 
-        {/* HERE THERE IS A CHANGE MADE: Global Call Modals mounted at root */}
         <IncomingCallModal />
         <VideoCallModal />
       </div>
