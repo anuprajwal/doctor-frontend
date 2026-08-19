@@ -26,7 +26,7 @@ export const useNotificationPermission = () => {
     if (!authToken) return;
 
     try {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://apis.docapp.co.in';
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.docapp.co.in';
       const response = await fetch(`${baseUrl}/api/notifications/save-token`, {
         method: 'POST',
         headers: {
