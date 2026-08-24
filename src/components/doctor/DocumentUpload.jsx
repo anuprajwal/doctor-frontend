@@ -45,7 +45,7 @@ export default function DocumentUpload() {
     if (!file) return;
     const data = new FormData();
     data.append('document', file);
-    data.append('key', keyName); // Appending reference for key identification
+    data.append('documentName', keyName);
 
     setStatus({ loading: true, error: null, success: null });
     try {
