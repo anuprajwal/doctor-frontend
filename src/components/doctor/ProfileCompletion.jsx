@@ -29,9 +29,23 @@ export default function ProfileCompletion() {
   });
 
   const [otpState, setOtpState] = useState({
-    emailOtpSent: false, emailOtp: '',
-    phoneOtpSent: false, phoneOtp: '',
-  });
+  email: {
+    otp: '',
+    sent: false,
+    loading: false,
+    error: null,
+    resendTimer: 0,
+    attempts: 0,
+  },
+  phone: {
+    otp: '',
+    sent: false,
+    loading: false,
+    error: null,
+    resendTimer: 0,
+    attempts: 0,
+  }
+});
 
   const [addresses, setAddresses] = useState([]);
   const [addressForm, setAddressForm] = useState({ city: '', pincode: '', street: '', state: '', country: '', landmark: '', houseNo: '' });
@@ -78,6 +92,26 @@ export default function ProfileCompletion() {
   useEffect(() => {
     fetchUserData();
     fetchAddressesData();
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setOtpState(prev => {
+        let updated = { ...prev };
+        let changed = false;
+
+        ['email', 'phone'].forEach(type => {
+          if (updated[type].resendTimer > 0) {
+            updated[type] = { ...updated[type], resendTimer: updated[type].resendTimer - 1 };
+            changed = true;
+          }
+        });
+
+        return changed ? updated : prev;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
   }, []);
 
   const handleInputChange = (e) => {
@@ -134,42 +168,94 @@ export default function ProfileCompletion() {
       setStatus({ loading: false, error: err.response?.data?.message || 'Failed to update profile.', success: null });
     }
   };
+const MAX_ATTEMPTS = 3;
 
-  // OTP Verification Handlers
+  // Send / Resend OTP
   const handleSendOtp = async (type) => {
+    if (otpState[type].resendTimer > 0) return;
+
+    setOtpState(prev => ({
+      ...prev,
+      [type]: { ...prev[type], loading: true, error: null }
+    }));
+
     try {
       if (type === 'email') {
         await doctorService.sendEmailOtp(formData.email);
-        setOtpState(prev => ({ ...prev, emailOtpSent: true }));
       } else {
         await doctorService.sendMobileOtp(formData.phone_number);
-        setOtpState(prev => ({ ...prev, phoneOtpSent: true }));
       }
-      setStatus({ loading: false, error: null, success: `OTP sent to your ${type}.` });
+
+      setOtpState(prev => ({
+        ...prev,
+        [type]: {
+          ...prev[type],
+          sent: true,
+          loading: false,
+          resendTimer: 30, // 30-second cooldown
+          error: null,
+          otp: ''
+        }
+      }));
     } catch (err) {
-      setStatus({ loading: false, error: err.response?.data?.message || `Failed to send ${type} OTP.`, success: null });
+      const errorMsg = err.response?.data?.message || `Failed to send OTP to ${type}.`;
+      setOtpState(prev => ({
+        ...prev,
+        [type]: { ...prev[type], loading: false, error: errorMsg }
+      }));
     }
   };
 
+  // Verify OTP with Attempt Limits
   const handleVerifyOtp = async (type) => {
-    try {
-      const payload = type === 'email' 
-        ? { email: formData.email, userOtp: otpState.emailOtp }
-        : { phoneNumber: formData.phone_number, userOtp: otpState.phoneOtp };
-      
-      await doctorService.verifyOtp(payload);
-      
-      setVerification(prev => ({ 
-        ...prev, 
-        [type === 'email' ? 'is_email_verified' : 'is_phone_verified']: true 
-      }));
+    const currentOtp = otpState[type].otp.trim();
+
+    if (!currentOtp || currentOtp.length < 4) {
       setOtpState(prev => ({
         ...prev,
-        [type === 'email' ? 'emailOtpSent' : 'phoneOtpSent']: false
+        [type]: { ...prev[type], error: 'Please enter a valid OTP code.' }
       }));
-      setStatus({ loading: false, error: null, success: `${type === 'email' ? 'Email' : 'Phone'} verified successfully.` });
+      return;
+    }
+
+    setOtpState(prev => ({
+      ...prev,
+      [type]: { ...prev[type], loading: true, error: null }
+    }));
+
+    try {
+      const payload = type === 'email'
+        ? { email: formData.email, userOtp: currentOtp }
+        : { phoneNumber: formData.phone_number, userOtp: currentOtp };
+
+      await doctorService.verifyOtp(payload);
+
+      setVerification(prev => ({
+        ...prev,
+        [type === 'email' ? 'is_email_verified' : 'is_phone_verified']: true
+      }));
+
+      setOtpState(prev => ({
+        ...prev,
+        [type]: { ...prev[type], sent: false, loading: false, error: null, attempts: 0 }
+      }));
     } catch (err) {
-      setStatus({ loading: false, error: err.response?.data?.message || `Invalid ${type} OTP.`, success: null });
+      const nextAttempts = otpState[type].attempts + 1;
+      let errorMsg = err.response?.data?.message || 'Invalid verification code.';
+
+      if (nextAttempts >= MAX_ATTEMPTS) {
+        errorMsg = 'Maximum attempts reached. Please request a new OTP.';
+      }
+
+      setOtpState(prev => ({
+        ...prev,
+        [type]: {
+          ...prev[type],
+          loading: false,
+          error: errorMsg,
+          attempts: nextAttempts
+        }
+      }));
     }
   };
 
@@ -253,85 +339,170 @@ export default function ProfileCompletion() {
           <InputField label="Full Name" name="full_name" value={formData.full_name} onChange={handleInputChange} />
           <InputField label="Specialization" name="specialization" value={formData.specialization} onChange={handleInputChange} />
 
-          {/* Email Verification Component */}
+          {/* Email Verification Section */}
           <div className="space-y-2">
             <div className="flex items-end gap-2">
               <div className="flex-1">
                 <InputField label="Email Address (Read-only)" name="email" value={formData.email} readOnly />
               </div>
               {verification.is_email_verified ? (
-                <div className="h-10 flex items-center px-2">
-                  <CheckCircleIcon />
+                <div className="h-10 flex items-center px-2 text-green-600">
+                  <CheckCircleIcon className="w-6 h-6" />
                 </div>
               ) : (
-                <button 
+                <button
                   type="button"
-                  onClick={() => handleSendOtp('email')} 
-                  className="h-10 px-3 bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-bold rounded-lg border border-slate-200 transition"
+                  disabled={otpState.email.loading || otpState.email.resendTimer > 0}
+                  onClick={() => handleSendOtp('email')}
+                  className="h-10 px-3 bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50 text-xs font-bold rounded-lg border border-slate-200 transition"
                 >
-                  Verify
+                  {otpState.email.loading ? 'Sending...' : otpState.email.sent ? 'Resend' : 'Verify'}
                 </button>
               )}
             </div>
-            {otpState.emailOtpSent && !verification.is_email_verified && (
-              <div className="flex gap-2 animate-fadeIn">
-                <input 
-                  type="text" 
-                  placeholder="Enter 6-digit Email OTP" 
-                  className="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-blue-500"
-                  value={otpState.emailOtp} 
-                  onChange={e => setOtpState(prev => ({ ...prev, emailOtp: e.target.value }))}
-                />
-                <button 
-                  type="button"
-                  onClick={() => handleVerifyOtp('email')} 
-                  className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg"
-                >
-                  Confirm
-                </button>
+
+            {/* OTP Input & Status Box */}
+            {otpState.email.sent && !verification.is_email_verified && (
+              <div className="space-y-1.5 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    maxLength={6}
+                    placeholder="Enter Email OTP"
+                    className="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-blue-500 bg-white"
+                    value={otpState.email.otp}
+                    disabled={otpState.email.attempts >= MAX_ATTEMPTS}
+                    onChange={e => {
+                      const val = e.target.value.replace(/\D/g, ''); // Numbers only
+                      setOtpState(prev => ({
+                        ...prev,
+                        email: { ...prev.email, otp: val, error: null }
+                      }));
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={otpState.email.loading || otpState.email.attempts >= MAX_ATTEMPTS}
+                    onClick={() => handleVerifyOtp('email')}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition"
+                  >
+                    {otpState.email.loading ? 'Verifying...' : 'Confirm'}
+                  </button>
+                </div>
+
+                {/* Helper / Cooldown / Error Line */}
+                <div className="flex justify-between items-center text-[11px] pt-1">
+                  <div>
+                    {otpState.email.error ? (
+                      <span className="text-red-500 font-medium">{otpState.email.error}</span>
+                    ) : (
+                      <span className="text-slate-500">Enter code sent to your inbox</span>
+                    )}
+                  </div>
+
+                  <div>
+                    {otpState.email.resendTimer > 0 ? (
+                      <span className="text-slate-400 font-medium">Resend in {otpState.email.resendTimer}s</span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleSendOtp('email')}
+                        className="text-blue-600 font-semibold hover:underline"
+                      >
+                        Resend OTP
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>
+
 
           {/* Mobile Verification Component */}
           <div className="space-y-2">
             <div className="flex items-end gap-2">
               <div className="flex-1">
-                <InputField label="Phone Number (Read-only)" name="phone_number" value={formData.phone_number} readOnly />
+                <InputField 
+                  label="Phone Number (Read-only)" 
+                  name="phone_number" 
+                  value={formData.phone_number} 
+                  readOnly 
+                />
               </div>
               {verification.is_phone_verified ? (
-                <div className="h-10 flex items-center px-2">
-                  <CheckCircleIcon />
+                <div className="h-10 flex items-center px-2 text-green-600">
+                  <CheckCircleIcon className="w-6 h-6" />
                 </div>
               ) : (
                 <button 
                   type="button"
+                  disabled={otpState.phone.loading || otpState.phone.resendTimer > 0}
                   onClick={() => handleSendOtp('phone')} 
-                  className="h-10 px-3 bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-bold rounded-lg border border-slate-200 transition"
+                  className="h-10 px-3 bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50 text-xs font-bold rounded-lg border border-slate-200 transition"
                 >
-                  Verify
+                  {otpState.phone.loading ? 'Sending...' : otpState.phone.sent ? 'Resend' : 'Verify'}
                 </button>
               )}
             </div>
-            {otpState.phoneOtpSent && !verification.is_phone_verified && (
-              <div className="flex gap-2 animate-fadeIn">
-                <input 
-                  type="text" 
-                  placeholder="Enter 6-digit Mobile OTP" 
-                  className="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-blue-500"
-                  value={otpState.phoneOtp} 
-                  onChange={e => setOtpState(prev => ({ ...prev, phoneOtp: e.target.value }))}
-                />
-                <button 
-                  type="button"
-                  onClick={() => handleVerifyOtp('phone')} 
-                  className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg"
-                >
-                  Confirm
-                </button>
+
+            {/* Mobile OTP Input & Actions */}
+            {otpState.phone.sent && !verification.is_phone_verified && (
+              <div className="space-y-1.5 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    maxLength={6}
+                    placeholder="Enter 6-digit Mobile OTP" 
+                    className="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-blue-500 bg-white"
+                    value={otpState.phone.otp} 
+                    disabled={otpState.phone.attempts >= MAX_ATTEMPTS}
+                    onChange={e => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      setOtpState(prev => ({
+                        ...prev,
+                        phone: { ...prev.phone, otp: val, error: null }
+                      }));
+                    }}
+                  />
+                  <button 
+                    type="button"
+                    disabled={otpState.phone.loading || otpState.phone.attempts >= MAX_ATTEMPTS}
+                    onClick={() => handleVerifyOtp('phone')} 
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition"
+                  >
+                    {otpState.phone.loading ? 'Verifying...' : 'Confirm'}
+                  </button>
+                </div>
+
+                {/* Error & Resend Controls */}
+                <div className="flex justify-between items-center text-[11px] pt-1">
+                  <div>
+                    {otpState.phone.error ? (
+                      <span className="text-red-500 font-medium">{otpState.phone.error}</span>
+                    ) : (
+                      <span className="text-slate-500">Enter SMS code sent to your mobile</span>
+                    )}
+                  </div>
+
+                  <div>
+                    {otpState.phone.resendTimer > 0 ? (
+                      <span className="text-slate-400 font-medium">Resend in {otpState.phone.resendTimer}s</span>
+                    ) : (
+                      <button 
+                        type="button"
+                        onClick={() => handleSendOtp('phone')} 
+                        className="text-blue-600 font-semibold hover:underline"
+                      >
+                        Resend OTP
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>
+
 
           <InputField label="License Number" name="license_number" onChange={handleInputChange} value={formData.license_number} />
           <InputField label="Years of Experience" name="experience_years" onChange={handleInputChange} value={formData.experience_years} />
