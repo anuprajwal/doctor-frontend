@@ -98,6 +98,8 @@ export default function ProfileCompletion() {
       setStatus({ loading: false, error: null, success: 'Profile photo updated successfully!' });
     } catch (err) {
       setStatus({ loading: false, error: 'Photo upload failed.', success: null });
+    } finally {
+      window.location.reload();
     }
   };
 
