@@ -74,6 +74,38 @@ export default function HospitalDetailPage({ hospital, onBack }) {
     }
   };
 
+  // Helper to format experience from practice_start_date (or fallback to legacy experience_years)
+  const formatExperience = (practiceStartDate, legacyYears) => {
+    if (practiceStartDate) {
+      const [startYear, startMonth] = practiceStartDate.slice(0, 7).split('-').map(Number);
+      if (startYear && startMonth) {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth() + 1;
+
+        const totalMonths = (currentYear - startYear) * 12 + (currentMonth - startMonth);
+        if (totalMonths < 0) return 'Practice starts soon';
+
+        const years = Math.floor(totalMonths / 12);
+        const months = totalMonths % 12;
+
+        const yearStr = years > 0 ? `${years} ${years === 1 ? 'year' : 'years'}` : '';
+        const monthStr = months > 0 ? `${months} ${months === 1 ? 'month' : 'months'}` : '';
+
+        if (yearStr && monthStr) return `${yearStr}, ${monthStr} experience`;
+        if (yearStr) return `${yearStr} experience`;
+        if (monthStr) return `${monthStr} experience`;
+        return '< 1 month experience';
+      }
+    }
+
+    if (legacyYears) {
+      return `${legacyYears} ${Number(legacyYears) === 1 ? 'year' : 'years'} experience`;
+    }
+
+    return 'Practitioner';
+  };
+
   const specializations = parseSpecializations(hospital?.specializations_provided);
   const docCurrentPage = Math.floor(docOffset / docLimit) + 1;
   const docTotalPages = Math.ceil(totalDocs / docLimit) || 1;
@@ -196,6 +228,7 @@ export default function HospitalDetailPage({ hospital, onBack }) {
             {doctors.map((doc) => {
               const profile = doc.doctorProfile || doc;
               const doctorUser = doc.user || doc;
+              const experienceLabel = formatExperience(profile.practice_start_date, profile.experience_years);
 
               return (
                 <div
@@ -215,7 +248,7 @@ export default function HospitalDetailPage({ hospital, onBack }) {
                       {profile.specialization || 'General Specialist'}
                     </p>
                     <p className="text-slate-400 text-[11px] mt-0.5">
-                      {profile.experience_years ? `${profile.experience_years} years experience` : 'Practitioner'}
+                      {experienceLabel}
                     </p>
                     <div className="mt-2 flex items-center justify-between text-xs text-slate-600 font-medium">
                       <span className="font-bold text-slate-900">₹ {profile.consultation_fee || '500.00'}</span>
