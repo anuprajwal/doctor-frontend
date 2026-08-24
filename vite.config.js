@@ -10,9 +10,9 @@ export default defineConfig({
     host: true,
     allowedHosts: ['doctors.docapp.co.in'],
     hmr: {
-      host: 'doctors.docapp.co.in', // Directs the browser HMR websocket to your domain
-      protocol: 'wss', // Uses secure websockets if your site is served over HTTPS
-      clientPort: 443, // Standard HTTPS port used by Nginx/reverse proxy
+      host: 'doctors.docapp.co.in',
+      protocol: 'wss',
+      clientPort: 443,
     },
   },
       

@@ -2,8 +2,8 @@ import React from 'react';
 
 export default function InputField({ label, name, type = 'text', value, onChange, disabled, placeholder, readOnly, error }) {
   return (
-    <div class="mb-4 w-full">
-      <label class="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+    <div className="mb-4 w-full">
+      <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
       <input
         type={type}
         name={name}
@@ -15,7 +15,7 @@ export default function InputField({ label, name, type = 'text', value, onChange
           ${readOnly || disabled ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed' : 'border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'}
           ${error ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : ''}`}
       />
-      {error && <p class="text-xs text-red-500 mt-1">{error}</p>}
+      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
     </div>
   );
 }
