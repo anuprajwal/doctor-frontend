@@ -21,23 +21,32 @@ export default function DocumentUpload() {
   const fetchExistingDocuments = async () => {
     try {
       const res = await doctorService.getDocuments();
-      // Expecting array mapping inside return signature payload
-      if (res.data) {
-        // Map elements directly matching keys into structured map configuration
-        const updated = { ...documents };
-        const dynamicDocs = [];
-        res.data.forEach(d => {
-          if (updated[d.key]) {
-            updated[d.key] = { status: 'Uploaded', url: d.url };
-          } else {
-            dynamicDocs.push({ name: d.key, status: 'Uploaded', url: d.url });
-          }
+      
+      // Access the userDocuments array from the response object
+      const docList = res.data?.userDocuments || [];
+
+      if (Array.isArray(docList)) {
+        setDocuments(prev => {
+          const updated = { ...prev };
+          const dynamicDocs = [];
+
+          docList.forEach(d => {
+            const docKey = d.document_type;
+            const docUrl = d.document_url;
+
+            if (updated[docKey]) {
+              updated[docKey] = { status: 'Uploaded', url: docUrl };
+            } else {
+              dynamicDocs.push({ name: docKey, status: 'Uploaded', url: docUrl });
+            }
+          });
+
+          setWildcards(dynamicDocs);
+          return updated;
         });
-        setDocuments(updated);
-        setWildcards(dynamicDocs);
       }
     } catch (err) {
-      console.error("Failed fetching standard profile documents mapping ecosystem context.");
+      console.error("Failed fetching standard profile documents mapping ecosystem context:", err);
     }
   };
 
