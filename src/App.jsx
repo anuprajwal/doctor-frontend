@@ -1,6 +1,6 @@
 // src/App.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './components/ui/Navbar';
 import ProfileCompletion from './components/doctor/ProfileCompletion';
 import DocumentUpload from './components/doctor/DocumentUpload';
@@ -18,27 +18,72 @@ import VideoCallModal from './components/calling/VideoCallModal';
 import { useNotificationPermission } from './services/useNotificationPermission';
 
 export default function App() {
-  // Prompts user for notification permission and registers the FCM token
   useNotificationPermission();
 
-  const [currentTab, setCurrentTab] = useState('appointments');
-  const [selectedAppointment, setSelectedAppointment] = useState(null);
-  const [selectedHospital, setSelectedHospital] = useState(null);
+  // 1. Read initial view and selection parameters from the URL
+  const getUrlState = () => {
+    const params = new URLSearchParams(window.location.search);
+    return {
+      currentTab: params.get('tab') || 'appointments',
+      selectedAppointment: params.get('appointmentId') ? { id: params.get('appointmentId') } : null,
+      selectedHospital: params.get('hospitalId') ? { id: params.get('hospitalId') } : null,
+    };
+  };
+
+  const initialUrlState = getUrlState();
+  const [currentTab, setCurrentTab] = useState(initialUrlState.currentTab);
+  const [selectedAppointment, setSelectedAppointment] = useState(initialUrlState.selectedAppointment);
+  const [selectedHospital, setSelectedHospital] = useState(initialUrlState.selectedHospital);
+
+  // 2. Helper to synchronize state changes directly with URL query parameters
+  const navigateTo = (newTab, data = {}) => {
+    const params = new URLSearchParams();
+    params.set('tab', newTab);
+
+    if (data.appointment) {
+      params.set('appointmentId', data.appointment.id || data.appointment);
+      setSelectedAppointment(data.appointment);
+    } else if (newTab === 'appointments') {
+      setSelectedAppointment(null);
+    }
+
+    if (data.hospital) {
+      params.set('hospitalId', data.hospital.id || data.hospital);
+      setSelectedHospital(data.hospital);
+    } else if (newTab === 'hospitals') {
+      setSelectedHospital(null);
+    }
+
+    setCurrentTab(newTab);
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.pushState({}, '', newUrl);
+  };
+
+  // 3. Listen to browser Back/Forward navigation buttons (popstate)
+  useEffect(() => {
+    const handlePopState = () => {
+      const state = getUrlState();
+      setCurrentTab(state.currentTab);
+      setSelectedAppointment(state.selectedAppointment);
+      setSelectedHospital(state.selectedHospital);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const handleTransitionToAppointmentDetails = (appointment) => {
-    setSelectedAppointment(appointment);
-    setCurrentTab('appointment-detail');
+    navigateTo('appointment-detail', { appointment });
   };
 
   const handleTransitionToHospitalDetails = (hospital) => {
-    setSelectedHospital(hospital);
-    setCurrentTab('hospital-detail');
+    navigateTo('hospital-detail', { hospital });
   };
 
   return (
     <CallProvider>
       <div className="min-h-screen flex flex-col bg-slate-50 print:bg-white">
-        <Navbar currentTab={currentTab} setCurrentTab={setCurrentTab} />
+        <Navbar currentTab={currentTab} setCurrentTab={(tab) => navigateTo(tab)} />
 
         {/* Main Dynamic Viewport */}
         <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 print:p-0">
@@ -50,7 +95,7 @@ export default function App() {
           {currentTab === 'appointment-detail' && selectedAppointment && (
             <AppointmentDetails 
               appointment={selectedAppointment} 
-              onBack={() => setCurrentTab('appointments')} 
+              onBack={() => navigateTo('appointments')} 
             />
           )}
           {currentTab === 'hospitals' && (
@@ -61,7 +106,7 @@ export default function App() {
           {currentTab === 'hospital-detail' && selectedHospital && (
             <HospitalDetailPage 
               hospital={selectedHospital} 
-              onBack={() => setCurrentTab('hospitals')} 
+              onBack={() => navigateTo('hospitals')} 
             />
           )}
           {currentTab === 'profile' && <ProfileCompletion />}
