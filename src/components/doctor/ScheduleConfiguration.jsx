@@ -154,7 +154,7 @@ export default function ScheduleConfiguration() {
               type="number" 
               value={consultationFee} 
               onChange={(e) => setConsultationFee(e.target.value)} 
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:border-blue-500 outline-none" 
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:border-blue-500 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
             />
           </div>
           <div>
