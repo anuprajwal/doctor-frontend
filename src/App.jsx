@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { doctorService } from '../../services/api';
-import Loader from '../ui/Loader';
-import Alert from '../ui/Alert';
+import { doctorService } from './services/api';
+import Loader from './components/ui/Loader';
+import Alert from './components/ui/Alert';
 import { 
   ArrowLeft, MapPin, Globe, Award, Calendar, 
   ShieldCheck, ChevronLeft, ChevronRight, Stethoscope, Clock 
-} from '../ui/Icons';
-import { getSelectedItem, clearSelectedItem } from '../../utils/navigationStorage';
+} from './components/ui/Icons';
+import { getSelectedItem, clearSelectedItem } from './utils/navigationStorage';
 
 export default function HospitalDetailPage({ hospital: propHospital, onBack }) {
   // Read active item from prop or storage fallback on page reload
