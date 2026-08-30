@@ -36,6 +36,9 @@ export default function ScheduleConfiguration() {
         if (profile.practice_start_date) {
           setPracticeStartDate(profile.practice_start_date.slice(0, 7));
         }
+        if (profile.consultation_fee) {
+          setConsultationFee(profile.consultation_fee);
+        }
       } catch (err) {
         // Fallback gracefully if profile data fetch fails
       }
