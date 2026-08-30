@@ -1,61 +1,142 @@
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
+import Navbar from './components/ui/Navbar';
+import ProfileCompletion from './components/doctor/ProfileCompletion';
+import DocumentUpload from './components/doctor/DocumentUpload';
+import ScheduleConfiguration from './components/doctor/ScheduleConfiguration';
+import AppointmentList from './components/doctor/AppointmentList';
+import AppointmentDetails from './components/doctor/AppointmentDetails';
+import HospitalSearch from './components/doctor/HospitalSearch';
+import HospitalDetailPage from './components/doctor/HospitalDetailPage';
+import DoctorKycSection from './components/doctor/DoctorKycSection';
+import NotFound from './pages/NotFound';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://apis.docapp.co.in';
+import { CallProvider } from './context/CallContext';
+import IncomingCallModal from './components/calling/IncomingCallModal';
+import VideoCallModal from './components/calling/VideoCallModal';
+import { useNotificationPermission } from './services/useNotificationPermission';
+import { setSelectedItem, getSelectedItem, clearSelectedItem } from './utils/navigationStorage';
 
-const api = axios.create({ baseURL: BASE_URL });
-const authApi = axios.create({ baseURL: BASE_URL });
-const verifyApi = axios.create({ baseURL: BASE_URL });
+export default function App() {
+  useNotificationPermission();
 
-const injectToken = (config) => {
-  const match = document.cookie.match(new RegExp('(^| )auth_token=([^;]+)'));
-  if (match) {
-    config.headers['Authorization'] = `Bearer ${match[2]}`;
-  }
-  return config;
-};
+  // 1. Read URL and retrieve the active object on browser reload
+  const getUrlState = () => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab') || 'appointments';
 
-[api, authApi, verifyApi].forEach((instance) => instance.interceptors.request.use(injectToken));
+    return {
+      currentTab: tab,
+      selectedAppointment: tab === 'appointment-detail' ? getSelectedItem('doctor_appointment') : null,
+      selectedHospital: tab === 'hospital-detail' ? getSelectedItem('doctor_hospital') : null,
+    };
+  };
 
-export const doctorService = {
-  // Profile & Verification Actions
-  getUserData: () => authApi.get('/api/auth/get-user-data'),
-  updateProfile: (data) => authApi.put('/api/auth/profile/complete/doctor', data),
-  uploadPhoto: (formData) => authApi.post('/api/auth/upload-photo', formData),
-  deletePhoto: () => authApi.delete('/api/auth/delete-profile-pic'),
-  updateExtraInfo: (data) => authApi.put('/api/auth/profile/complete/extra-doc-info', data),
-  sendEmailOtp: (email) => verifyApi.post('/api/verify/sendEmailOtp', { email }),
-  sendMobileOtp: (phoneNumber) => verifyApi.post('/api/verify/sendMobileOtp', { phoneNumber }),
-  verifyOtp: (payload) => verifyApi.put('/api/verify/verifyEmailMobile', payload),
+  const initialUrlState = getUrlState();
+  const [currentTab, setCurrentTab] = useState(initialUrlState.currentTab);
+  const [selectedAppointment, setSelectedAppointment] = useState(initialUrlState.selectedAppointment);
+  const [selectedHospital, setSelectedHospital] = useState(initialUrlState.selectedHospital);
 
-  // Verification Documents
-  getDocuments: () => api.get('/api/documents/get-documents'),
-  uploadDocument: (formData) => api.post('/api/documents/upload-document', formData),
+  // 2. Synchronize navigation parameters with URL and single-item storage
+  const navigateTo = (newTab, data = {}) => {
+    const params = new URLSearchParams();
+    params.set('tab', newTab);
 
-  // Appointments & Prescriptions Workflow
-  listAppointments: () => api.get('/api/appointment/list-appointments'),
-  getPrescription: (appointmentId) => api.get(`/api/appointment/get-prescription-for/${appointmentId}`),
-  updateAppointment: (payload) => api.put('/api/appointment/doctor-update-appointment', payload),
+    // Handle Appointment selection
+    if (data.appointment) {
+      params.set('appointmentId', data.appointment.id);
+      setSelectedAppointment(data.appointment);
+      setSelectedItem('doctor_appointment', data.appointment);
+    } else if (newTab === 'appointments') {
+      setSelectedAppointment(null);
+      clearSelectedItem('doctor_appointment');
+    }
 
-  // Appointment Documents Management
-  getDocumentsByAppointment: (appointmentId) => api.get(`/api/appointment/get-document-for/${appointmentId}`),
-  uploadAppointmentDocument: (formData) => api.post('/api/appointment/upload-appointment-document', formData),
-  deleteAppointmentDocument: (docId) => api.delete(`/api/appointment/delete-document/${docId}`),
-  replaceAppointmentDocument: (docId, formData) => api.put(`/api/appointment/replace-document/${docId}`, formData),
+    // Handle Hospital selection
+    if (data.hospital) {
+      const hospId = data.hospital.user_id || data.hospital.id;
+      params.set('hospitalId', hospId);
+      setSelectedHospital(data.hospital);
+      setSelectedItem('doctor_hospital', data.hospital);
+    } else if (newTab === 'hospitals') {
+      setSelectedHospital(null);
+      clearSelectedItem('doctor_hospital');
+    }
 
-  // Addresses & Banking Setup
-  addAddress: (data) => authApi.post('/api/address/addAddress', data),
-  getAllAddresses: () => verifyApi.get('/api/address/getAllAddress'),
-  updateAddress: (data) => verifyApi.put('/api/address/updateAddress', data),
-  deleteAddress: (addressId) => verifyApi.delete('/api/address/deleteAddress', { data: { addressId } }),
-  uploadBankDetails: (data) => verifyApi.post('/api/auth/upload/bank-details', data),
+    setCurrentTab(newTab);
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.pushState({}, '', newUrl);
+  };
 
-  // Hospital Discovery & Affiliation
-  filterHospitals: (type = 'hospital', limit = 10, offset = 0, pincode = '') =>
-    api.get(`/api/filter/filter-hospitals?type=${encodeURIComponent(type)}&limit=${limit}&offset=${offset}${pincode ? `&pincode=${encodeURIComponent(pincode)}` : ''}`),
-  
-  getHospitalDoctors: (organisationId, limit = 10, offset = 0) =>
-    api.get(`/api/filter/get-hospital-doctors/${organisationId}?limit=${limit}&offset=${offset}`),
+  // 3. Listen to browser Back/Forward navigation buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const state = getUrlState();
+      setCurrentTab(state.currentTab);
+      setSelectedAppointment(state.selectedAppointment);
+      setSelectedHospital(state.selectedHospital);
+    };
 
-  searchHospitalsByName: (name) => api.post('/api/filter/search/hospital-by-name', { name }),
-  requestAdmission: (organisationId) => api.post('/api/hospital/doctor-request-admission', { organisation_id: organisationId })
-};
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const handleTransitionToAppointmentDetails = (appointment) => {
+    navigateTo('appointment-detail', { appointment });
+  };
+
+  const handleTransitionToHospitalDetails = (hospital) => {
+    navigateTo('hospital-detail', { hospital });
+  };
+
+  return (
+    <CallProvider>
+      <div className="min-h-screen flex flex-col bg-slate-50 print:bg-white">
+        <Navbar currentTab={currentTab} setCurrentTab={(tab) => navigateTo(tab)} />
+
+        {/* Main Dynamic Viewport */}
+        <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 print:p-0">
+          {currentTab === 'appointments' && (
+            <AppointmentList 
+              onViewDetails={handleTransitionToAppointmentDetails} 
+            />
+          )}
+          {currentTab === 'appointment-detail' && (
+            <AppointmentDetails 
+              appointment={selectedAppointment} 
+              onBack={() => {
+                clearSelectedItem('doctor_appointment');
+                navigateTo('appointments');
+              }} 
+            />
+          )}
+          {currentTab === 'hospitals' && (
+            <HospitalSearch 
+              onViewHospital={handleTransitionToHospitalDetails} 
+            />
+          )}
+          {currentTab === 'hospital-detail' && (
+            <HospitalDetailPage 
+              hospital={selectedHospital} 
+              onBack={() => {
+                clearSelectedItem('doctor_hospital');
+                navigateTo('hospitals');
+              }} 
+            />
+          )}
+          {currentTab === 'profile' && <ProfileCompletion />}
+          {currentTab === 'documents' && <DocumentUpload />}
+          {currentTab === 'schedule' && <ScheduleConfiguration />}
+          {currentTab === 'KYC Details' && <DoctorKycSection />}
+          {currentTab === '404' && <NotFound />}
+        </main>
+
+        <footer className="bg-white border-t border-slate-100 py-4 text-center text-[10px] text-slate-400 font-semibold print:hidden">
+          © 2026 MedPlatform Health Systems. HIPAA Compliant Interface Base Integration Layer.
+        </footer>
+
+        <IncomingCallModal />
+        <VideoCallModal />
+      </div>
+    </CallProvider>
+  );
+}

@@ -1,23 +1,17 @@
-// src/components/doctor/HospitalDetailPage.jsx
-
 import React, { useState, useEffect } from 'react';
 import { doctorService } from '../../services/api';
 import Loader from '../ui/Loader';
 import Alert from '../ui/Alert';
 import { 
-  ArrowLeft, 
-  MapPin, 
-  Globe, 
-  Award, 
-  Calendar, 
-  ShieldCheck, 
-  ChevronLeft, 
-  ChevronRight, 
-  Stethoscope, 
-  Clock 
+  ArrowLeft, MapPin, Globe, Award, Calendar, 
+  ShieldCheck, ChevronLeft, ChevronRight, Stethoscope, Clock 
 } from '../ui/Icons';
+import { getSelectedItem, clearSelectedItem } from '../../utils/navigationStorage';
 
-export default function HospitalDetailPage({ hospital, onBack }) {
+export default function HospitalDetailPage({ hospital: propHospital, onBack }) {
+  // Read active item from prop or storage fallback on page reload
+  const hospital = propHospital || getSelectedItem('doctor_hospital');
+
   const [doctors, setDoctors] = useState([]);
   const [loadingDoctors, setLoadingDoctors] = useState(false);
   const [docOffset, setDocOffset] = useState(0);
@@ -26,10 +20,11 @@ export default function HospitalDetailPage({ hospital, onBack }) {
   const [status, setStatus] = useState({ loading: false, error: null, success: null });
 
   useEffect(() => {
-    if (hospital?.user_id) {
-      fetchDoctors(hospital.user_id, docOffset);
+    const targetId = hospital?.user_id || hospital?.id;
+    if (targetId) {
+      fetchDoctors(targetId, docOffset);
     }
-  }, [hospital?.user_id, docOffset]);
+  }, [hospital?.user_id, hospital?.id, docOffset]);
 
   const fetchDoctors = async (orgId, currentDocOffset) => {
     setLoadingDoctors(true);
@@ -74,7 +69,6 @@ export default function HospitalDetailPage({ hospital, onBack }) {
     }
   };
 
-  // Helper to format experience from practice_start_date (or fallback to legacy experience_years)
   const formatExperience = (practiceStartDate, legacyYears) => {
     if (practiceStartDate) {
       const [startYear, startMonth] = practiceStartDate.slice(0, 7).split('-').map(Number);
@@ -106,15 +100,30 @@ export default function HospitalDetailPage({ hospital, onBack }) {
     return 'Practitioner';
   };
 
+  const handleBack = () => {
+    clearSelectedItem('doctor_hospital');
+    onBack();
+  };
+
+  if (!hospital) {
+    return (
+      <div className="bg-white p-8 text-center rounded-2xl border border-slate-200">
+        <p className="text-slate-500 mb-4 font-medium">No hospital selected or session expired.</p>
+        <button onClick={handleBack} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">
+          Return to Hospital Discovery
+        </button>
+      </div>
+    );
+  }
+
   const specializations = parseSpecializations(hospital?.specializations_provided);
   const docCurrentPage = Math.floor(docOffset / docLimit) + 1;
   const docTotalPages = Math.ceil(totalDocs / docLimit) || 1;
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
-      {/* Return Button */}
       <button
-        onClick={onBack}
+        onClick={handleBack}
         className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors bg-white px-3.5 py-2 rounded-xl border border-slate-200/80 shadow-sm"
       >
         <ArrowLeft className="w-4 h-4" /> Return to Hospital Discovery
@@ -122,7 +131,6 @@ export default function HospitalDetailPage({ hospital, onBack }) {
 
       <Alert type={status.success ? 'success' : 'error'} message={status.success || status.error} />
 
-      {/* Hospital Detailed Overview Card */}
       <div className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
         <div className="flex flex-col sm:flex-row gap-6 items-start justify-between">
           <div className="flex flex-col sm:flex-row gap-5 items-start">
@@ -209,7 +217,6 @@ export default function HospitalDetailPage({ hospital, onBack }) {
         )}
       </div>
 
-      {/* Hospital Doctors Registry Section */}
       <div className="space-y-4">
         <div>
           <h2 className="text-lg font-bold text-slate-900 tracking-tight">Active Practicing Doctors</h2>
@@ -265,7 +272,6 @@ export default function HospitalDetailPage({ hospital, onBack }) {
           </div>
         )}
 
-        {/* Doctor Pagination */}
         {totalDocs > docLimit && (
           <div className="flex items-center justify-between bg-white px-4 py-3 border border-slate-200/80 rounded-xl shadow-sm mt-4">
             <span className="text-xs text-slate-500 font-medium">
