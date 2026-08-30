@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Navbar from './components/ui/Navbar';
+import Navbar from '../components/ui/Navbar';
 import ProfileCompletion from './components/doctor/ProfileCompletion';
 import DocumentUpload from './components/doctor/DocumentUpload';
 import ScheduleConfiguration from './components/doctor/ScheduleConfiguration';
