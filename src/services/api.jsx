@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/ui/Navbar';
-import ProfileCompletion from './components/doctor/ProfileCompletion';
-import DocumentUpload from './components/doctor/DocumentUpload';
-import ScheduleConfiguration from './components/doctor/ScheduleConfiguration';
-import AppointmentList from './components/doctor/AppointmentList';
-import AppointmentDetails from './components/doctor/AppointmentDetails';
-import HospitalSearch from './components/doctor/HospitalSearch';
-import HospitalDetailPage from './components/doctor/HospitalDetailPage';
-import DoctorKycSection from './components/doctor/DoctorKycSection';
-import NotFound from './pages/NotFound';
+import ProfileCompletion from '../components/doctor/ProfileCompletion';
+import DocumentUpload from '../components/doctor/DocumentUpload';
+import ScheduleConfiguration from '../components/doctor/ScheduleConfiguration';
+import AppointmentList from '../components/doctor/AppointmentList';
+import AppointmentDetails from '../components/doctor/AppointmentDetails';
+import HospitalSearch from '../components/doctor/HospitalSearch';
+import HospitalDetailPage from '../components/doctor/HospitalDetailPage';
+import DoctorKycSection from '../components/doctor/DoctorKycSection';
+import NotFound from '../pages/NotFound';
 
 import { CallProvider } from './context/CallContext';
 import IncomingCallModal from './components/calling/IncomingCallModal';
