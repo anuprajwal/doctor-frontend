@@ -1,128 +1,306 @@
-// src/App.jsx
-
 import React, { useState, useEffect } from 'react';
-import Navbar from './components/ui/Navbar';
-import ProfileCompletion from './components/doctor/ProfileCompletion';
-import DocumentUpload from './components/doctor/DocumentUpload';
-import ScheduleConfiguration from './components/doctor/ScheduleConfiguration';
-import AppointmentList from './components/doctor/AppointmentList';
-import AppointmentDetails from './components/doctor/AppointmentDetails';
-import HospitalSearch from './components/doctor/HospitalSearch';
-import HospitalDetailPage from './components/doctor/HospitalDetailPage';
-import DoctorKycSection from './components/doctor/DoctorKycSection';
-import NotFound from './pages/NotFound';
+import { doctorService } from '../../services/api';
+import Loader from '../ui/Loader';
+import Alert from '../ui/Alert';
+import { 
+  ArrowLeft, MapPin, Globe, Award, Calendar, 
+  ShieldCheck, ChevronLeft, ChevronRight, Stethoscope, Clock 
+} from '../ui/Icons';
+import { getSelectedItem, clearSelectedItem } from '../../utils/navigationStorage';
 
-import { CallProvider } from './context/CallContext';
-import IncomingCallModal from './components/calling/IncomingCallModal';
-import VideoCallModal from './components/calling/VideoCallModal';
-import { useNotificationPermission } from './services/useNotificationPermission';
+export default function HospitalDetailPage({ hospital: propHospital, onBack }) {
+  // Read active item from prop or storage fallback on page reload
+  const hospital = propHospital || getSelectedItem('doctor_hospital');
 
-export default function App() {
-  useNotificationPermission();
+  const [doctors, setDoctors] = useState([]);
+  const [loadingDoctors, setLoadingDoctors] = useState(false);
+  const [docOffset, setDocOffset] = useState(0);
+  const [docLimit] = useState(6);
+  const [totalDocs, setTotalDocs] = useState(0);
+  const [status, setStatus] = useState({ loading: false, error: null, success: null });
 
-  // 1. Read initial view and selection parameters from the URL
-  const getUrlState = () => {
-    const params = new URLSearchParams(window.location.search);
-    return {
-      currentTab: params.get('tab') || 'appointments',
-      selectedAppointment: params.get('appointmentId') ? { id: params.get('appointmentId') } : null,
-      selectedHospital: params.get('hospitalId') ? { id: params.get('hospitalId') } : null,
-    };
-  };
-
-  const initialUrlState = getUrlState();
-  const [currentTab, setCurrentTab] = useState(initialUrlState.currentTab);
-  const [selectedAppointment, setSelectedAppointment] = useState(initialUrlState.selectedAppointment);
-  const [selectedHospital, setSelectedHospital] = useState(initialUrlState.selectedHospital);
-
-  // 2. Helper to synchronize state changes directly with URL query parameters
-  const navigateTo = (newTab, data = {}) => {
-    const params = new URLSearchParams();
-    params.set('tab', newTab);
-
-    if (data.appointment) {
-      params.set('appointmentId', data.appointment.id || data.appointment);
-      setSelectedAppointment(data.appointment);
-    } else if (newTab === 'appointments') {
-      setSelectedAppointment(null);
-    }
-
-    if (data.hospital) {
-      params.set('hospitalId', data.hospital.id || data.hospital);
-      setSelectedHospital(data.hospital);
-    } else if (newTab === 'hospitals') {
-      setSelectedHospital(null);
-    }
-
-    setCurrentTab(newTab);
-    const newUrl = `${window.location.pathname}?${params.toString()}`;
-    window.history.pushState({}, '', newUrl);
-  };
-
-  // 3. Listen to browser Back/Forward navigation buttons (popstate)
   useEffect(() => {
-    const handlePopState = () => {
-      const state = getUrlState();
-      setCurrentTab(state.currentTab);
-      setSelectedAppointment(state.selectedAppointment);
-      setSelectedHospital(state.selectedHospital);
-    };
+    const targetId = hospital?.user_id || hospital?.id;
+    if (targetId) {
+      fetchDoctors(targetId, docOffset);
+    }
+  }, [hospital?.user_id, hospital?.id, docOffset]);
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
-
-  const handleTransitionToAppointmentDetails = (appointment) => {
-    navigateTo('appointment-detail', { appointment });
+  const fetchDoctors = async (orgId, currentDocOffset) => {
+    setLoadingDoctors(true);
+    try {
+      const res = await doctorService.getHospitalDoctors(orgId, docLimit, currentDocOffset);
+      const data = res.data;
+      setDoctors(data?.doctors || []);
+      setTotalDocs(data?.pagination?.total_records || data?.total || (data?.doctors ? data.doctors.length : 0));
+    } catch (err) {
+      setDoctors([]);
+      setTotalDocs(0);
+    } finally {
+      setLoadingDoctors(false);
+    }
   };
 
-  const handleTransitionToHospitalDetails = (hospital) => {
-    navigateTo('hospital-detail', { hospital });
+  const handleSendJoinRequest = async () => {
+    setStatus({ loading: true, error: null, success: null });
+    try {
+      await doctorService.requestAdmission(hospital.id);
+      setStatus({ 
+        loading: false, 
+        error: null, 
+        success: 'Admission request successfully forwarded to the hospital administration.' 
+      });
+    } catch (err) {
+      setStatus({ 
+        loading: false, 
+        error: err.response?.data?.message || 'Admission request failed. Please try again.', 
+        success: null 
+      });
+    }
   };
+
+  const parseSpecializations = (data) => {
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    try {
+      return JSON.parse(data);
+    } catch {
+      return [];
+    }
+  };
+
+  const formatExperience = (practiceStartDate, legacyYears) => {
+    if (practiceStartDate) {
+      const [startYear, startMonth] = practiceStartDate.slice(0, 7).split('-').map(Number);
+      if (startYear && startMonth) {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth() + 1;
+
+        const totalMonths = (currentYear - startYear) * 12 + (currentMonth - startMonth);
+        if (totalMonths < 0) return 'Practice starts soon';
+
+        const years = Math.floor(totalMonths / 12);
+        const months = totalMonths % 12;
+
+        const yearStr = years > 0 ? `${years} ${years === 1 ? 'year' : 'years'}` : '';
+        const monthStr = months > 0 ? `${months} ${months === 1 ? 'month' : 'months'}` : '';
+
+        if (yearStr && monthStr) return `${yearStr}, ${monthStr} experience`;
+        if (yearStr) return `${yearStr} experience`;
+        if (monthStr) return `${monthStr} experience`;
+        return '< 1 month experience';
+      }
+    }
+
+    if (legacyYears) {
+      return `${legacyYears} ${Number(legacyYears) === 1 ? 'year' : 'years'} experience`;
+    }
+
+    return 'Practitioner';
+  };
+
+  const handleBack = () => {
+    clearSelectedItem('doctor_hospital');
+    onBack();
+  };
+
+  if (!hospital) {
+    return (
+      <div className="bg-white p-8 text-center rounded-2xl border border-slate-200">
+        <p className="text-slate-500 mb-4 font-medium">No hospital selected or session expired.</p>
+        <button onClick={handleBack} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">
+          Return to Hospital Discovery
+        </button>
+      </div>
+    );
+  }
+
+  const specializations = parseSpecializations(hospital?.specializations_provided);
+  const docCurrentPage = Math.floor(docOffset / docLimit) + 1;
+  const docTotalPages = Math.ceil(totalDocs / docLimit) || 1;
 
   return (
-    <CallProvider>
-      <div className="min-h-screen flex flex-col bg-slate-50 print:bg-white">
-        <Navbar currentTab={currentTab} setCurrentTab={(tab) => navigateTo(tab)} />
+    <div className="space-y-8 max-w-7xl mx-auto">
+      <button
+        onClick={handleBack}
+        className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors bg-white px-3.5 py-2 rounded-xl border border-slate-200/80 shadow-sm"
+      >
+        <ArrowLeft className="w-4 h-4" /> Return to Hospital Discovery
+      </button>
 
-        {/* Main Dynamic Viewport */}
-        <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 print:p-0">
-          {currentTab === 'appointments' && (
-            <AppointmentList 
-              onViewDetails={handleTransitionToAppointmentDetails} 
-            />
-          )}
-          {currentTab === 'appointment-detail' && selectedAppointment && (
-            <AppointmentDetails 
-              appointment={selectedAppointment} 
-              onBack={() => navigateTo('appointments')} 
-            />
-          )}
-          {currentTab === 'hospitals' && (
-            <HospitalSearch 
-              onViewHospital={handleTransitionToHospitalDetails} 
-            />
-          )}
-          {currentTab === 'hospital-detail' && selectedHospital && (
-            <HospitalDetailPage 
-              hospital={selectedHospital} 
-              onBack={() => navigateTo('hospitals')} 
-            />
-          )}
-          {currentTab === 'profile' && <ProfileCompletion />}
-          {currentTab === 'documents' && <DocumentUpload />}
-          {currentTab === 'schedule' && <ScheduleConfiguration />}
-          {currentTab === 'KYC Details' && <DoctorKycSection />}
-          {currentTab === '404' && <NotFound />}
-        </main>
+      <Alert type={status.success ? 'success' : 'error'} message={status.success || status.error} />
 
-        <footer className="bg-white border-t border-slate-100 py-4 text-center text-[10px] text-slate-400 font-semibold print:hidden">
-          © 2026 MedPlatform Health Systems. HIPAA Compliant Interface Base Integration Layer.
-        </footer>
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row gap-6 items-start justify-between">
+          <div className="flex flex-col sm:flex-row gap-5 items-start">
+            <img
+              src={hospital?.profile_picture || 'https://res.cloudinary.com/dwshjkk42/image/upload/v1751270847/hospital-building_4821512_qr0gvo.png'}
+              alt={hospital?.organisation_name || 'Hospital Profile'}
+              className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border border-slate-200 shadow-sm flex-shrink-0"
+            />
 
-        <IncomingCallModal />
-        <VideoCallModal />
+            <div className="space-y-2.5">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                  {hospital?.organisation_name || `Hospital Facility #${hospital?.id}`}
+                </h1>
+                {hospital?.verified_status && (
+                  <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full border border-emerald-200">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Verified
+                  </span>
+                )}
+              </div>
+
+              <p className="text-slate-600 text-xs sm:text-sm flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                {hospital?.address?.street
+                  ? `${hospital.address.street}, ${hospital.address.city || ''} - ${hospital.address.pincode || ''}`
+                  : 'Address details available upon request'}
+              </p>
+
+              <div className="flex flex-wrap gap-2.5 pt-1 text-xs text-slate-600 font-medium">
+                {hospital?.regestration_number && (
+                  <span className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                    <Award className="w-3.5 h-3.5 text-blue-500" /> Reg: {hospital.regestration_number}
+                  </span>
+                )}
+                {hospital?.establishment_year && (
+                  <span className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                    <Calendar className="w-3.5 h-3.5 text-blue-500" /> Est: {hospital.establishment_year}
+                  </span>
+                )}
+                {hospital?.website_url && (
+                  <a
+                    href={hospital.website_url.startsWith('http') ? hospital.website_url : `https://${hospital.website_url}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1.5 bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg border border-blue-100 hover:underline"
+                  >
+                    <Globe className="w-3.5 h-3.5" /> {hospital.website_url}
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={handleSendJoinRequest}
+            disabled={status.loading}
+            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-sm self-start transition whitespace-nowrap"
+          >
+            {status.loading ? 'Submitting...' : 'Request Admission'}
+          </button>
+        </div>
+
+        {hospital?.description && (
+          <div className="pt-4 border-t border-slate-100">
+            <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Hospital Overview</h3>
+            <p className="text-slate-700 text-xs sm:text-sm leading-relaxed">{hospital.description}</p>
+          </div>
+        )}
+
+        {specializations.length > 0 && (
+          <div className="pt-4 border-t border-slate-100">
+            <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Departments & Clinical Offerings</h3>
+            <div className="flex flex-wrap gap-2">
+              {specializations.map((item, idx) => (
+                <span
+                  key={idx}
+                  className="px-3 py-1.5 rounded-lg text-xs bg-slate-50 text-slate-700 font-semibold border border-slate-200 flex items-center gap-1.5"
+                >
+                  <Stethoscope className="w-3.5 h-3.5 text-blue-500" /> {item}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-    </CallProvider>
+
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900 tracking-tight">Active Practicing Doctors</h2>
+          <p className="text-slate-500 text-xs mt-0.5">Specialists actively operating within this hospital network.</p>
+        </div>
+
+        {loadingDoctors ? (
+          <Loader />
+        ) : doctors.length === 0 ? (
+          <div className="text-center py-10 bg-white rounded-xl border border-slate-200">
+            <Stethoscope className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+            <p className="text-slate-500 text-xs font-medium">No doctors currently listed under this hospital facility.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {doctors.map((doc) => {
+              const profile = doc.doctorProfile || doc;
+              const doctorUser = doc.user || doc;
+              const experienceLabel = formatExperience(profile.practice_start_date, profile.experience_years);
+
+              return (
+                <div
+                  key={doc.id || profile.id}
+                  className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm flex items-start gap-3.5"
+                >
+                  <img
+                    src={profile.profile_picture || 'https://res.cloudinary.com/dwshjkk42/image/upload/v1751270760/doctor_8997187_mgopyu.png'}
+                    alt="Doctor"
+                    className="w-12 h-12 rounded-full object-cover border border-slate-100 flex-shrink-0"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-bold text-slate-900 text-sm truncate">
+                      {doctorUser.username || profile.full_name || 'Dr. Practitioner'}
+                    </h4>
+                    <p className="text-blue-600 text-xs font-semibold mt-0.5 truncate">
+                      {profile.specialization || 'General Specialist'}
+                    </p>
+                    <p className="text-slate-400 text-[11px] mt-0.5">
+                      {experienceLabel}
+                    </p>
+                    <div className="mt-2 flex items-center justify-between text-xs text-slate-600 font-medium">
+                      <span className="font-bold text-slate-900">₹ {profile.consultation_fee || '500.00'}</span>
+                      {profile.appointment_time && (
+                        <span className="flex items-center gap-1 text-slate-400 text-[11px]">
+                          <Clock className="w-3 h-3" /> {profile.appointment_time} mins
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {totalDocs > docLimit && (
+          <div className="flex items-center justify-between bg-white px-4 py-3 border border-slate-200/80 rounded-xl shadow-sm mt-4">
+            <span className="text-xs text-slate-500 font-medium">
+              Showing <span className="font-bold text-slate-800">{docOffset + 1}</span> to{' '}
+              <span className="font-bold text-slate-800">{Math.min(docOffset + docLimit, totalDocs)}</span> of{' '}
+              <span className="font-bold text-slate-800">{totalDocs}</span> doctors
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setDocOffset((prev) => Math.max(0, prev - docLimit))}
+                disabled={docOffset === 0 || loadingDoctors}
+                className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-xs font-bold text-slate-700 px-1">
+                Page {docCurrentPage} of {docTotalPages}
+              </span>
+              <button
+                onClick={() => setDocOffset((prev) => prev + docLimit)}
+                disabled={docOffset + docLimit >= totalDocs || loadingDoctors}
+                className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
