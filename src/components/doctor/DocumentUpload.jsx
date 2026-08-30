@@ -2,7 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { doctorService } from '../../services/api';
 import Alert from '../ui/Alert';
 import Loader from '../ui/Loader';
-import { CheckCircle2, XCircle, AlertTriangle, FileText, Upload, Sparkles, HelpCircle } from 'lucide-react';
+import { 
+  FileText, 
+  Upload, 
+  Crop, 
+  HardDrive, 
+  Check, 
+  X, 
+  XCircle,
+  HelpCircle,
+  Sparkles
+} from 'lucide-react';
 
 export default function DocumentUpload() {
   const [documents, setDocuments] = useState({
@@ -13,6 +23,15 @@ export default function DocumentUpload() {
   const [wildcards, setWildcards] = useState([]);
   const [newDocName, setNewDocName] = useState('');
   const [status, setStatus] = useState({ loading: false, error: null, success: null });
+  
+  // Controls the Instructions Modal - open on page entry
+  const [showInstructionsModal, setShowInstructionsModal] = useState(true);
+
+  // Pre-upload confirmation checks
+  const [checklist, setChecklist] = useState({
+    correctDoc: false,
+    entireVisible: false
+  });
 
   useEffect(() => {
     fetchExistingDocuments();
@@ -51,7 +70,7 @@ export default function DocumentUpload() {
   const validateAndUpload = async (keyName, file) => {
     if (!file) return;
 
-    // Client-side strict validation: Maximum 1 MB (1024 * 1024 bytes)
+    // Strict 1 MB size limit check (1024 * 1024 bytes)
     const MAX_SIZE_BYTES = 1 * 1024 * 1024;
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
 
@@ -87,7 +106,6 @@ export default function DocumentUpload() {
       });
       fetchExistingDocuments();
     } catch (err) {
-      // Handle 413 Payload Too Large and other server exceptions
       if (err.response?.status === 413) {
         setStatus({
           loading: false,
@@ -115,113 +133,30 @@ export default function DocumentUpload() {
 
   return (
     <div className="max-w-5xl mx-auto my-8 space-y-6 px-4">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Verification Credentials Upload</h1>
-        <p className="text-sm text-slate-500 mt-1">Upload verified identity & qualification certificates for hospital compliance audit.</p>
+      {/* Header & Re-open Instructions Button */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Verification Credentials Upload</h1>
+          <p className="text-sm text-slate-500 mt-1">Upload verified identity & qualification certificates for hospital compliance audit.</p>
+        </div>
+
+        <button
+          onClick={() => setShowInstructionsModal(true)}
+          type="button"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 transition border border-blue-100 self-start sm:self-auto"
+        >
+          <HelpCircle className="w-4 h-4 text-blue-600" /> View Upload Instructions
+        </button>
       </div>
 
-      <Alert type={status.success ? 'success' : 'error'} message={status.success || status.error} onClose={() => setStatus({ loading: false, error: null, success: null })} />
+      <Alert 
+        type={status.success ? 'success' : 'error'} 
+        message={status.success || status.error} 
+        onClose={() => setStatus({ loading: false, error: null, success: null })} 
+      />
       {status.loading && <Loader />}
 
-      {/* Visual Upload Guidelines Card */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-6">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-blue-600" />
-            <h2 className="text-base font-bold text-slate-800">Document Photo Guidelines</h2>
-          </div>
-          <span className="text-xs font-semibold px-2.5 py-1 bg-amber-50 text-amber-700 rounded-full border border-amber-200">
-            Strict Limit: Max 1 MB per file
-          </span>
-        </div>
-
-        {/* Visual Do & Don't Matrix */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          {/* 1. Correct Example */}
-          <div className="border border-emerald-200 bg-emerald-50/40 rounded-xl p-3 flex flex-col items-center text-center space-y-2.5">
-            <div className="w-full h-32 bg-white rounded-lg border-2 border-emerald-500 relative flex flex-col justify-center items-center shadow-xs p-3">
-              <div className="w-10 h-3 bg-emerald-100 rounded mb-1"></div>
-              <div className="w-16 h-2 bg-slate-200 rounded mb-1"></div>
-              <div className="w-12 h-2 bg-slate-200 rounded"></div>
-              <span className="absolute top-1.5 right-1.5 bg-emerald-600 text-white rounded-full p-0.5">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-              </span>
-            </div>
-            <div>
-              <p className="text-xs font-bold text-emerald-800">Clear & Well-Cropped</p>
-              <p className="text-[11px] text-emerald-700 leading-tight mt-0.5">All 4 corners visible, clear lighting, readable text.</p>
-            </div>
-          </div>
-
-          {/* 2. Bad Example: Cut off */}
-          <div className="border border-rose-200 bg-rose-50/30 rounded-xl p-3 flex flex-col items-center text-center space-y-2.5">
-            <div className="w-full h-32 bg-white rounded-lg border-2 border-rose-400 relative overflow-hidden flex items-center justify-center p-3">
-              <div className="w-20 h-16 bg-slate-100 border border-slate-300 rounded translate-x-4 translate-y-3 opacity-60 flex flex-col justify-center items-center">
-                <div className="w-10 h-2 bg-slate-300 rounded mb-1"></div>
-                <div className="w-6 h-2 bg-slate-300 rounded"></div>
-              </div>
-              <span className="absolute top-1.5 right-1.5 bg-rose-600 text-white rounded-full p-0.5">
-                <XCircle className="w-3.5 h-3.5" />
-              </span>
-            </div>
-            <div>
-              <p className="text-xs font-bold text-rose-800">Cut Off / Incomplete</p>
-              <p className="text-[11px] text-slate-500 leading-tight mt-0.5">Do not cut edges, corners, or license numbers.</p>
-            </div>
-          </div>
-
-          {/* 3. Bad Example: Dark/Shadowy */}
-          <div className="border border-rose-200 bg-rose-50/30 rounded-xl p-3 flex flex-col items-center text-center space-y-2.5">
-            <div className="w-full h-32 bg-slate-900 rounded-lg border-2 border-rose-400 relative flex flex-col justify-center items-center p-3">
-              <div className="w-10 h-3 bg-slate-700 rounded mb-1"></div>
-              <div className="w-16 h-2 bg-slate-700 rounded mb-1"></div>
-              <div className="w-12 h-2 bg-slate-700 rounded"></div>
-              <span className="absolute top-1.5 right-1.5 bg-rose-600 text-white rounded-full p-0.5">
-                <XCircle className="w-3.5 h-3.5" />
-              </span>
-            </div>
-            <div>
-              <p className="text-xs font-bold text-rose-800">Too Dark / Uneven</p>
-              <p className="text-[11px] text-slate-500 leading-tight mt-0.5">Avoid dark backgrounds and harsh shadows.</p>
-            </div>
-          </div>
-
-          {/* 4. Bad Example: Glare/Overexposed */}
-          <div className="border border-rose-200 bg-rose-50/30 rounded-xl p-3 flex flex-col items-center text-center space-y-2.5">
-            <div className="w-full h-32 bg-gradient-to-tr from-amber-100 via-white to-white rounded-lg border-2 border-rose-400 relative flex flex-col justify-center items-center p-3">
-              <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
-                <span className="text-xs text-amber-600 font-bold">⚡ Flash Glare</span>
-              </div>
-              <span className="absolute top-1.5 right-1.5 bg-rose-600 text-white rounded-full p-0.5">
-                <XCircle className="w-3.5 h-3.5" />
-              </span>
-            </div>
-            <div>
-              <p className="text-xs font-bold text-rose-800">Blurry or Flash Glare</p>
-              <p className="text-[11px] text-slate-500 leading-tight mt-0.5">Letters must be legible without reflection.</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Bullet Instructions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-slate-100 text-xs text-slate-600">
-          <div className="flex items-start gap-2">
-            <span className="w-5 h-5 rounded-full bg-blue-50 text-blue-600 font-bold flex items-center justify-center shrink-0 text-[11px]">1</span>
-            <p><strong>Size Limit:</strong> File must be under <strong>1 MB</strong>. Compress if needed before upload.</p>
-          </div>
-          <div className="flex items-start gap-2">
-            <span className="w-5 h-5 rounded-full bg-blue-50 text-blue-600 font-bold flex items-center justify-center shrink-0 text-[11px]">2</span>
-            <p><strong>Supported Formats:</strong> JPG, JPEG, PNG image or PDF document.</p>
-          </div>
-          <div className="flex items-start gap-2">
-            <span className="w-5 h-5 rounded-full bg-blue-50 text-blue-600 font-bold flex items-center justify-center shrink-0 text-[11px]">3</span>
-            <p><strong>Clarity Check:</strong> Ensure ID number and registration dates are sharply in focus.</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Upload Rows Section */}
+      {/* REQUIRED COMPLIANCE DOCUMENTS SECTION */}
       <div className="bg-white border border-slate-200/90 rounded-2xl shadow-sm overflow-hidden">
         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
           <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Required Compliance Documents</h3>
@@ -336,6 +271,203 @@ export default function DocumentUpload() {
           </button>
         </div>
       </div>
+
+      {/* STRUCTURED INSTRUCTIONS MODAL */}
+      {showInstructionsModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white border border-slate-200 w-full max-w-2xl rounded-3xl shadow-2xl p-6 sm:p-8 space-y-6 relative my-8 animate-fadeIn max-h-[90vh] overflow-y-auto">
+            
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">Document Upload Guidelines</h2>
+                  <p className="text-xs text-slate-500">Ensure your document photo meets all verification requirements.</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowInstructionsModal(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Top Grid: Key Requirements & Readability / Checklist */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+              
+              {/* Left Column: Key Requirements */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-bold text-slate-900">Key Requirements</h3>
+
+                <div className="p-4 rounded-2xl border border-blue-100 bg-blue-50/40 space-y-1.5">
+                  <div className="flex items-center gap-2 text-blue-700 font-bold text-xs">
+                    <Crop className="w-4 h-4" />
+                    <span>Crop correctly</span>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Keep the entire document inside the frame — all 4 corners must be visible.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl border border-blue-100 bg-blue-50/40 space-y-1.5">
+                  <div className="flex items-center gap-2 text-blue-700 font-bold text-xs">
+                    <HardDrive className="w-4 h-4" />
+                    <span className="flex items-center gap-1.5">
+                      Maximum <span className="bg-blue-600 text-white px-1.5 py-0.2 rounded text-[10px] font-bold">1 MB</span>
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Each document image must be smaller than 1 MB.
+                  </p>
+                </div>
+              </div>
+
+              {/* Right Column: Make sure the text is readable & Pre-upload checklist */}
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 mb-3">Make sure the text is readable</h3>
+                  <div className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-2.5">
+                    <div className="flex items-center justify-between text-xs font-semibold text-slate-800">
+                      <span>Sharp letters</span>
+                      <Check className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <div className="border-t border-slate-200/80 pt-2 flex items-center justify-between text-xs font-semibold text-slate-800">
+                      <span>Blurry images</span>
+                      <X className="w-4 h-4 text-rose-600" />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 mb-2">Before you tap Upload</h4>
+                  <div className="space-y-2 text-xs text-slate-700">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={checklist.correctDoc}
+                        onChange={(e) => setChecklist(prev => ({ ...prev, correctDoc: e.target.checked }))}
+                        className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" 
+                      />
+                      <span>Correct document</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={checklist.entireVisible}
+                        onChange={(e) => setChecklist(prev => ({ ...prev, entireVisible: e.target.checked }))}
+                        className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" 
+                      />
+                      <span>Entire document visible</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom: Lighting Verification Guide */}
+            <div className="space-y-3 pt-2 border-t border-slate-100">
+              <h3 className="text-sm font-bold text-slate-900">Lighting Guide</h3>
+
+              <div className="bg-slate-100/70 border border-slate-200 rounded-2xl p-4 sm:p-5 flex flex-col items-center">
+                
+                {/* Header Tag */}
+                <div className="bg-white border border-slate-200 px-4 py-1 rounded shadow-xs mb-4">
+                  <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-slate-800">
+                    LIGHTING VERIFICATION GUIDE
+                  </span>
+                </div>
+
+                {/* 3 Real Photographic Visual Comparisons */}
+                <div className="grid grid-cols-3 gap-2 sm:gap-4 w-full max-w-lg mb-4">
+                  {/* 1. GOOD */}
+                  <div className="flex flex-col items-center">
+                    <div className="w-full aspect-3/4 rounded-lg bg-white border border-slate-300 overflow-hidden shadow-xs relative">
+                      <div className="p-1.5 sm:p-2.5 h-full flex flex-col justify-between bg-slate-50">
+                        <div>
+                          <div className="text-[7px] sm:text-[9px] font-bold text-slate-500">PASSPORT / ID</div>
+                          <div className="w-full h-1 bg-slate-300 rounded my-1"></div>
+                        </div>
+                        <div className="w-8 sm:w-12 h-10 sm:h-14 bg-blue-100 rounded mx-auto flex items-center justify-center text-blue-700 text-[9px] font-bold">
+                          PHOTO
+                        </div>
+                        <div className="space-y-0.5">
+                          <div className="w-full h-1 bg-slate-300 rounded"></div>
+                          <div className="w-3/4 h-1 bg-slate-300 rounded"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <span className="mt-2 bg-white px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold text-slate-800 border border-slate-200 shadow-2xs">
+                      1. GOOD
+                    </span>
+                  </div>
+
+                  {/* 2. TOO DARK */}
+                  <div className="flex flex-col items-center">
+                    <div className="w-full aspect-3/4 rounded-lg bg-slate-900 border border-slate-700 overflow-hidden shadow-xs relative">
+                      <div className="p-1.5 sm:p-2.5 h-full flex flex-col justify-between bg-slate-950 opacity-50">
+                        <div>
+                          <div className="text-[7px] sm:text-[9px] font-bold text-slate-600">PASSPORT / ID</div>
+                          <div className="w-full h-1 bg-slate-700 rounded my-1"></div>
+                        </div>
+                        <div className="w-8 sm:w-12 h-10 sm:h-14 bg-slate-800 rounded mx-auto flex items-center justify-center text-slate-600 text-[9px] font-bold">
+                          DARK
+                        </div>
+                        <div className="space-y-0.5">
+                          <div className="w-full h-1 bg-slate-700 rounded"></div>
+                          <div className="w-3/4 h-1 bg-slate-700 rounded"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <span className="mt-2 bg-white px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold text-slate-800 border border-slate-200 shadow-2xs">
+                      2. TOO DARK
+                    </span>
+                  </div>
+
+                  {/* 3. GLARE */}
+                  <div className="flex flex-col items-center">
+                    <div className="w-full aspect-3/4 rounded-lg bg-white border border-slate-300 overflow-hidden shadow-xs relative">
+                      <div className="p-1.5 sm:p-2.5 h-full flex flex-col justify-between bg-slate-50 relative">
+                        <div className="absolute inset-0 bg-radial from-white via-white/80 to-transparent flex items-center justify-center">
+                          <span className="text-[9px] font-black text-amber-500 uppercase">⚡ GLARE</span>
+                        </div>
+                        <div>
+                          <div className="text-[7px] sm:text-[9px] font-bold text-slate-300">PASSPORT / ID</div>
+                        </div>
+                        <div className="w-8 sm:w-12 h-10 sm:h-14 bg-slate-100 rounded mx-auto"></div>
+                        <div className="w-full h-1 bg-slate-200 rounded"></div>
+                      </div>
+                    </div>
+                    <span className="mt-2 bg-white px-2 py-0.5 rounded text-[10px] sm:text-xs font-bold text-slate-800 border border-slate-200 shadow-2xs">
+                      3. GLARE
+                    </span>
+                  </div>
+                </div>
+
+                {/* Subtext description */}
+                <p className="text-[11px] sm:text-xs text-slate-600 text-center leading-relaxed max-w-md">
+                  Use enough light to clearly see every letter, but avoid excessive brightness or reflections.
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Bottom Action Button */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setShowInstructionsModal(false)}
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition shadow-md hover:shadow-lg"
+              >
+                I Understand, Continue to Upload
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }
