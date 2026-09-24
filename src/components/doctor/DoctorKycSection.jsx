@@ -126,7 +126,7 @@ export default function DoctorKycAndBankingPage() {
       }
     } catch (err) {
       setStatus({
-        error: err.response?.data?.message || 'KYC submission failed. Please verify the submitted data.',
+        error: err.response?.data?.error?.error?.description || 'KYC submission failed. Please verify the submitted data.',
         success: null
       });
     } finally {
