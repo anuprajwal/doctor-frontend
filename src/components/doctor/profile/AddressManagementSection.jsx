@@ -33,7 +33,7 @@ export default function AddressManagementSection({
               <div className="flex gap-3">
                 <button 
                   type="button" 
-                  onClick={() => { setEditingAddressId(addr.addressId); setAddressForm({ city: addr.city || '', pincode: addr.pincode || '', street: addr.street || '', state: addr.state || '', country: addr.country || '', landmark: addr.landmark || '', houseNo: addr.houseNo || '' }); }} 
+                  onClick={() => { setEditingAddressId(addr.addressId); setAddressForm({ city: addr.city || '', pincode: addr.pincode || '', street: addr.street || '', state: addr.state || '', country: addr.country || '', landmark: addr.landmark || '', house_no: addr.house_no || '' }); }} 
                   className="text-blue-600 hover:underline font-bold"
                 >
                   Edit
@@ -54,7 +54,7 @@ export default function AddressManagementSection({
       <form onSubmit={onSubmit} className="p-4 border border-slate-200 bg-slate-50/50 rounded-xl space-y-4">
         <h4 className="text-xs font-bold text-slate-700">{editingAddressId ? 'Edit Workspace Location' : 'Add New Practice Address'}</h4>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <InputField label="House/Clinic No" value={addressForm.houseNo} onChange={(e) => setAddressForm({ ...addressForm, houseNo: e.target.value })} placeholder="Rm 404" />
+          <InputField label="House/Clinic No" value={addressForm.houseNo} onChange={(e) => setAddressForm({ ...addressForm, house_no: e.target.value })} placeholder="Rm 404" />
           <InputField label="Street Route" value={addressForm.street} onChange={(e) => setAddressForm({ ...addressForm, street: e.target.value })} placeholder="Main Rd" />
           <InputField label="City Landmark" value={addressForm.landmark} onChange={(e) => setAddressForm({ ...addressForm, landmark: e.target.value })} />
           <InputField label="City Area" value={addressForm.city} onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })} placeholder="City" />
