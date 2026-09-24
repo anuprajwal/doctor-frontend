@@ -1,61 +1,113 @@
-import axios from 'axios';
-
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://apis.docapp.co.in';
 
-const api = axios.create({ baseURL: BASE_URL });
-const authApi = axios.create({ baseURL: BASE_URL });
-const verifyApi = axios.create({ baseURL: BASE_URL });
-
-const injectToken = (config) => {
+const getCookieToken = () => {
   const match = document.cookie.match(new RegExp('(^| )auth_token=([^;]+)'));
-  if (match) {
-    config.headers['Authorization'] = `Bearer ${match[2]}`;
-  }
-  return config;
+  return match ? decodeURIComponent(match[2]) : null;
 };
 
-[api, authApi, verifyApi].forEach((instance) => instance.interceptors.request.use(injectToken));
+const makeRequest = async (endpoint, options = {}) => {
+  const url = `${BASE_URL}${endpoint}`;
+
+  const isFormData = options.body instanceof FormData;
+
+  const headers = {
+    ...(!isFormData && { 'Content-Type': 'application/json' }),
+    ...options.headers,
+  };
+
+  const token = getCookieToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const config = {
+    ...options,
+    headers,
+  };
+
+  if (options.body && typeof options.body === 'object' && !isFormData) {
+    config.body = JSON.stringify(options.body);
+  }
+
+  try {
+    const response = await fetch(url, config);
+    let responseData = null;
+    const contentType = response.headers.get('content-type');
+
+    if (contentType && contentType.includes('application/json')) {
+      responseData = await response.json();
+    }
+
+    if (!response.ok) {
+      // Graceful redirect to login instead of an infinite reload loop
+      if (response.status === 401 || response.status === 403 || (responseData && responseData.error === 'jwt expired')) {
+        document.cookie = 'auth_token=; path=/; domain=.docapp.co.in; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        window.location.href = 'https://auth.docapp.co.in'; // Redirect to login
+        return;
+      }
+
+      const error = new Error(responseData?.message || `HTTP Exception: ${response.status}`);
+      error.response = { data: responseData, status: response.status };
+      throw error;
+    }
+
+    return { data: responseData, status: response.status };
+  } catch (error) {
+    if (!error.response) {
+      error.message = `Network connectivity layer failure: ${error.message}`;
+    }
+    throw error;
+  }
+};
 
 export const doctorService = {
   // Profile & Verification Actions
-  getUserData: () => authApi.get('/api/auth/get-user-data'),
-  updateProfile: (data) => authApi.put('/api/auth/profile/complete/doctor', data),
-  uploadPhoto: (formData) => authApi.post('/api/auth/upload-photo', formData),
-  deletePhoto: () => authApi.delete('/api/auth/delete-profile-pic'),
-  updateExtraInfo: (data) => authApi.put('/api/auth/profile/complete/extra-doc-info', data),
-  sendEmailOtp: (email) => verifyApi.post('/api/verify/sendEmailOtp', { email }),
-  sendMobileOtp: (phoneNumber) => verifyApi.post('/api/verify/sendMobileOtp', { phoneNumber }),
-  verifyOtp: (payload) => verifyApi.put('/api/verify/verifyEmailMobile', payload),
+  getUserData: () => makeRequest('/api/auth/get-user-data', { method: 'GET' }),
+  updateProfile: (data) => makeRequest('/api/auth/profile/complete/doctor', { method: 'PUT', body: data }),
+  uploadPhoto: (formData) => makeRequest('/api/auth/upload-photo', { method: 'POST', body: formData }),
+  deletePhoto: () => makeRequest('/api/auth/delete-profile-pic', { method: 'DELETE' }),
+  updateExtraInfo: (data) => makeRequest('/api/auth/profile/complete/extra-doc-info', { method: 'PUT', body: data }),
+  sendEmailOtp: (email) => makeRequest('/api/verify/sendEmailOtp', { method: 'POST', body: { email } }),
+  sendMobileOtp: (phoneNumber) => makeRequest('/api/verify/sendMobileOtp', { method: 'POST', body: { phoneNumber } }),
+  verifyOtp: (payload) => makeRequest('/api/verify/verifyEmailMobile', { method: 'PUT', body: payload }),
 
   // Verification Documents
-  getDocuments: () => api.get('/api/documents/get-documents'),
-  uploadDocument: (formData) => api.post('/api/documents/upload-document', formData),
+  getDocuments: () => makeRequest('/api/documents/get-documents', { method: 'GET' }),
+  uploadDocument: (formData) => makeRequest('/api/documents/upload-document', { method: 'POST', body: formData }),
 
   // Appointments & Prescriptions Workflow
-  listAppointments: () => api.get('/api/appointment/list-appointments'),
-  getPrescription: (appointmentId) => api.get(`/api/appointment/get-prescription-for/${appointmentId}`),
-  updateAppointment: (payload) => api.put('/api/appointment/doctor-update-appointment', payload),
+  listAppointments: () => makeRequest('/api/appointment/list-appointments', { method: 'GET' }),
+  getPrescription: (appointmentId) => makeRequest(`/api/appointment/get-prescription-for/${appointmentId}`, { method: 'GET' }),
+  updateAppointment: (payload) => makeRequest('/api/appointment/doctor-update-appointment', { method: 'PUT', body: payload }),
 
   // Appointment Documents Management
-  getDocumentsByAppointment: (appointmentId) => api.get(`/api/appointment/get-document-for/${appointmentId}`),
-  uploadAppointmentDocument: (formData) => api.post('/api/appointment/upload-appointment-document', formData),
-  deleteAppointmentDocument: (docId) => api.delete(`/api/appointment/delete-document/${docId}`),
-  replaceAppointmentDocument: (docId, formData) => api.put(`/api/appointment/replace-document/${docId}`, formData),
+  getDocumentsByAppointment: (appointmentId) => makeRequest(`/api/appointment/get-document-for/${appointmentId}`, { method: 'GET' }),
+  uploadAppointmentDocument: (formData) => makeRequest('/api/appointment/upload-appointment-document', { method: 'POST', body: formData }),
+  deleteAppointmentDocument: (docId) => makeRequest(`/api/appointment/delete-document/${docId}`, { method: 'DELETE' }),
+  replaceAppointmentDocument: (docId, formData) => makeRequest(`/api/appointment/replace-document/${docId}`, { method: 'PUT', body: formData }),
 
   // Addresses & Banking Setup
-  addAddress: (data) => authApi.post('/api/address/addAddress', data),
-  getAllAddresses: () => verifyApi.get('/api/address/getAllAddress'),
-  updateAddress: (data) => verifyApi.put('/api/address/updateAddress', data),
-  deleteAddress: (addressId) => verifyApi.delete('/api/address/deleteAddress', { data: { addressId } }),
-  uploadBankDetails: (data) => verifyApi.post('/api/auth/upload/bank-details', data),
+  addAddress: (data) => makeRequest('/api/address/addAddress', { method: 'POST', body: data }),
+  getAllAddresses: () => makeRequest('/api/address/getAllAddress', { method: 'GET' }),
+  updateAddress: (data) => makeRequest('/api/address/updateAddress', { method: 'PUT', body: data }),
+  deleteAddress: (addressId) => makeRequest('/api/address/deleteAddress', { method: 'DELETE', body: { addressId } }),
+  uploadBankDetails: (data) => makeRequest('/api/auth/upload/bank-details', { method: 'POST', body: data }),
 
   // Hospital Discovery & Affiliation
-  filterHospitals: (type = 'hospital', limit = 10, offset = 0, pincode = '') =>
-    api.get(`/api/filter/filter-hospitals?type=${encodeURIComponent(type)}&limit=${limit}&offset=${offset}${pincode ? `&pincode=${encodeURIComponent(pincode)}` : ''}`),
-  
-  getHospitalDoctors: (organisationId, limit = 10, offset = 0) =>
-    api.get(`/api/filter/get-hospital-doctors/${organisationId}?limit=${limit}&offset=${offset}`),
+  filterHospitals: (type = 'hospital', limit = 10, offset = 0, pincode = '') => {
+    const query = new URLSearchParams();
+    if (type) query.append('type', type);
+    if (limit) query.append('limit', limit);
+    if (offset) query.append('offset', offset);
+    if (pincode) query.append('pincode', pincode);
 
-  searchHospitalsByName: (name) => api.post('/api/filter/search/hospital-by-name', { name }),
-  requestAdmission: (organisationId) => api.post('/api/hospital/doctor-request-admission', { organisation_id: organisationId })
+    return makeRequest(`/api/filter/filter-hospitals?${query.toString()}`, { method: 'GET' });
+  },
+
+  getHospitalDoctors: (organisationId, limit = 10, offset = 0) =>
+    makeRequest(`/api/filter/get-hospital-doctors/${organisationId}?limit=${limit}&offset=${offset}`, { method: 'GET' }),
+
+  searchHospitalsByName: (name) => makeRequest('/api/filter/search/hospital-by-name', { method: 'POST', body: { name } }),
+  requestAdmission: (organisationId) => makeRequest('/api/hospital/doctor-request-admission', { method: 'POST', body: { organisation_id: organisationId } }),
 };
