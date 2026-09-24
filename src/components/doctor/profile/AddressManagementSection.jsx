@@ -33,7 +33,7 @@ export default function AddressManagementSection({
               <div className="flex gap-3">
                 <button 
                   type="button" 
-                  onClick={() => { setEditingAddressId(addr.addressId); setAddressForm(addr); }} 
+                  onClick={() => { setEditingAddressId(addr.addressId); setAddressForm({ city: addr.city || '', pincode: addr.pincode || '', street: addr.street || '', state: addr.state || '', country: addr.country || '', landmark: addr.landmark || '', houseNo: addr.houseNo || '' }); }} 
                   className="text-blue-600 hover:underline font-bold"
                 >
                   Edit
