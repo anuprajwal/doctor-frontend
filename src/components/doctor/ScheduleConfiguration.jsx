@@ -321,89 +321,89 @@ export default function ScheduleConfiguration() {
     return null;
   };
 
-  // const handleSaveAllSettings = async () => {
-  //   setStatus({ loading: false, error: null, success: null });
-
-  //   // Validate before dispatching request
-  //   const validationError = validateSchedule();
-  //   if (validationError) {
-  //     setStatus({ loading: false, error: validationError, success: null });
-  //     return;
-  //   }
-
-  //   setStatus({ loading: true, error: null, success: null });
-  //   try {
-  //     const formattedSchedule = schedule.map((item) => {
-  //       if (!item.active) {
-  //         return {
-  //           day: item.day,
-  //           loginTime: "",
-  //           logoutTime: "",
-  //           breaks: [],
-  //           mode: ""
-  //         };
-  //       }
-  //       return {
-  //         day: item.day,
-  //         loginTime: item.loginTime,
-  //         logoutTime: item.logoutTime,
-  //         breaks: item.breaks || [],
-  //         mode: item.mode || 'online'
-  //       };
-  //     });
-
-  //     const payload = {
-  //       availability_schedule: formattedSchedule,
-  //       consultation_fee: Number(consultationFee),
-  //       appointment_slot: Number(appointmentSlot)
-  //     };
-
-  //     await doctorService.updateExtraInfo(payload);
-  //     setInitialSchedule(schedule);
-  //     setStatus({ loading: false, error: null, success: 'Schedule matrix successfully saved to server.' });
-  //   } catch (err) {
-  //     setStatus({ loading: false, error: err.response?.data?.message || 'Failed updating availability setup data.', success: null });
-  //   }
-  // };
-
-
   const handleSaveAllSettings = async () => {
-  setStatus({ loading: false, error: null, success: null });
+    setStatus({ loading: false, error: null, success: null });
 
-  const validationError = validateSchedule();
-  if (validationError) {
-    setStatus({ loading: false, error: validationError, success: null });
-    return;
-  }
+    // Validate before dispatching request
+    const validationError = validateSchedule();
+    if (validationError) {
+      setStatus({ loading: false, error: validationError, success: null });
+      return;
+    }
 
-  setStatus({ loading: true, error: null, success: null });
-  try {
-    const formattedSchedule = schedule.map((item) => ({
-      day: item.day,
-      loginTime: item.active ? item.loginTime : "",
-      logoutTime: item.active ? item.logoutTime : "",
-      breaks: item.active ? (item.breaks || []) : [],
-      mode: item.active ? (item.mode || 'online') : ""
-    }));
+    setStatus({ loading: true, error: null, success: null });
+    try {
+      const formattedSchedule = schedule.map((item) => {
+        if (!item.active) {
+          return {
+            day: item.day,
+            loginTime: "",
+            logoutTime: "",
+            breaks: [],
+            mode: ""
+          };
+        }
+        return {
+          day: item.day,
+          loginTime: item.loginTime,
+          logoutTime: item.logoutTime,
+          breaks: item.breaks || [],
+          mode: item.mode || 'online'
+        };
+      });
 
-    const payload = {
-      // Stringify the array before sending back to match the backend schema
-      availability_schedule: JSON.stringify(formattedSchedule),
-      consultation_fee: Number(consultationFee),
-      appointment_slot: Number(appointmentSlot)
-    };
+      const payload = {
+        availability_schedule: formattedSchedule,
+        consultation_fee: Number(consultationFee),
+        appointment_slot: Number(appointmentSlot)
+      };
 
-    await doctorService.updateExtraInfo(payload);
-    setInitialSchedule(schedule);
-    setStatus({ loading: false, error: null, success: 'Schedule matrix successfully saved to server.' });
-  } catch (err) {
-    setStatus({ 
-      loading: false, 
-      error: err.response?.data?.message || 'Failed updating availability setup data.', 
-      success: null 
-    });
-  }
-};
+      await doctorService.updateExtraInfo(payload);
+      setInitialSchedule(schedule);
+      setStatus({ loading: false, error: null, success: 'Schedule matrix successfully saved to server.' });
+    } catch (err) {
+      setStatus({ loading: false, error: err.response?.data?.message || 'Failed updating availability setup data.', success: null });
+    }
+  };
+
+
+//   const handleSaveAllSettings = async () => {
+//   setStatus({ loading: false, error: null, success: null });
+
+//   const validationError = validateSchedule();
+//   if (validationError) {
+//     setStatus({ loading: false, error: validationError, success: null });
+//     return;
+//   }
+
+//   setStatus({ loading: true, error: null, success: null });
+//   try {
+//     const formattedSchedule = schedule.map((item) => ({
+//       day: item.day,
+//       loginTime: item.active ? item.loginTime : "",
+//       logoutTime: item.active ? item.logoutTime : "",
+//       breaks: item.active ? (item.breaks || []) : [],
+//       mode: item.active ? (item.mode || 'online') : ""
+//     }));
+
+//     const payload = {
+//       // Stringify the array before sending back to match the backend schema
+//       availability_schedule: JSON.stringify(formattedSchedule),
+//       consultation_fee: Number(consultationFee),
+//       appointment_slot: Number(appointmentSlot)
+//     };
+
+//     await doctorService.updateExtraInfo(payload);
+//     setInitialSchedule(schedule);
+//     setStatus({ loading: false, error: null, success: 'Schedule matrix successfully saved to server.' });
+//   } catch (err) {
+//     setStatus({ 
+//       loading: false, 
+//       error: err.response?.data?.message || 'Failed updating availability setup data.', 
+//       success: null 
+//     });
+//   }
+// };
 
   return (
     <div className="max-w-6xl mx-auto my-6 space-y-6 px-4">
