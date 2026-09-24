@@ -16,6 +16,7 @@ export default function AddressManagementSection({
   onSubmit,
   onDelete
 }) {
+  console.log('AddressManagementSection rendered with addresses:', addresses);
   return (
     <div className="bg-white border border-slate-200/80 shadow-sm rounded-xl p-8 space-y-6">
       <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Practice Locations & Addresses</h3>
