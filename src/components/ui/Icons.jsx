@@ -200,3 +200,19 @@ export const PhoneOff = (props) => (
     <line x1="1" x2="1" y1="1" y2="1" />
   </svg>
 );
+
+
+export const Menu = (props) => (
+  <svg viewBox="0 0 24 24" {...defaultProps} {...props}>
+    <line x1="4" x2="20" y1="6" y2="6" />
+    <line x1="4" x2="20" y1="12" y2="12" />
+    <line x1="4" x2="20" y1="18" y2="18" />
+  </svg>
+);
+
+export const X = (props) => (
+  <svg viewBox="0 0 24 24" {...defaultProps} {...props}>
+    <path d="M18 6 6 18" />
+    <path d="m6 6 12 12" />
+  </svg>
+);
