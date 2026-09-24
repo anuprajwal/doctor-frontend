@@ -28,7 +28,7 @@ export default function AddressManagementSection({
           addresses.map((addr, idx) => (
             <div key={addr.addressId || idx} className="p-4 flex items-center justify-between text-xs text-slate-600">
               <div>
-                <strong className="text-slate-800 font-bold block">{addr.houseNo || 'Main Facility'} {addr.street}</strong>
+                <strong className="text-slate-800 font-bold block">{addr.house_no || '12/3-1'} {addr.street}</strong>
                 <span>{addr.city}, {addr.state} - {addr.pincode} {addr.landmark && `[Ref: ${addr.landmark}]`}</span>
               </div>
               <div className="flex gap-3">
@@ -55,7 +55,7 @@ export default function AddressManagementSection({
       <form onSubmit={onSubmit} className="p-4 border border-slate-200 bg-slate-50/50 rounded-xl space-y-4">
         <h4 className="text-xs font-bold text-slate-700">{editingAddressId ? 'Edit Workspace Location' : 'Add New Practice Address'}</h4>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <InputField label="House/Clinic No" value={addressForm.houseNo} onChange={(e) => setAddressForm({ ...addressForm, house_no: e.target.value })} placeholder="Rm 404" />
+          <InputField label="House/Clinic No" value={addressForm.house_no} onChange={(e) => setAddressForm({ ...addressForm, house_no: e.target.value })} placeholder="Rm 404" />
           <InputField label="Street Route" value={addressForm.street} onChange={(e) => setAddressForm({ ...addressForm, street: e.target.value })} placeholder="Main Rd" />
           <InputField label="City Landmark" value={addressForm.landmark} onChange={(e) => setAddressForm({ ...addressForm, landmark: e.target.value })} />
           <InputField label="City Area" value={addressForm.city} onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })} placeholder="City" />
@@ -69,7 +69,7 @@ export default function AddressManagementSection({
               type="button"
               onClick={() => {
                 setEditingAddressId(null);
-                setAddressForm({ city: '', pincode: '', street: '', state: '', country: '', landmark: '', houseNo: '' });
+                setAddressForm({ city: '', pincode: '', street: '', state: '', country: '', landmark: '', house_no: '' });
               }}
               className="px-3 py-1.5 border rounded-lg text-xs font-semibold"
             >
