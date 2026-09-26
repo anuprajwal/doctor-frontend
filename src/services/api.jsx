@@ -1,9 +1,6 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://apis.docapp.co.in';
 
-const getCookieToken = () => {
-  const match = document.cookie.match(new RegExp('(^| )auth_token=([^;]+)'));
-  return match ? decodeURIComponent(match[2]) : null;
-};
+
 
 const makeRequest = async (endpoint, options = {}) => {
   const url = `${BASE_URL}${endpoint}`;
@@ -15,14 +12,11 @@ const makeRequest = async (endpoint, options = {}) => {
     ...options.headers,
   };
 
-  const token = getCookieToken();
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
   const config = {
     ...options,
     headers,
+    // CRITICAL: Automatically sends the HttpOnly cookie with cross-subdomain requests
+    credentials: 'include',
   };
 
   if (options.body && typeof options.body === 'object' && !isFormData) {
@@ -39,15 +33,18 @@ const makeRequest = async (endpoint, options = {}) => {
     }
 
     if (!response.ok) {
-      // Graceful redirect to login instead of an infinite reload loop
-      if (response.status === 401 || response.status === 403 || (responseData && responseData.error === 'jwt expired')) {
-        document.cookie = 'auth_token=; path=/; domain=.docapp.co.in; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        window.location.href = 'https://auth.docapp.co.in'; // Redirect to login
+      if (
+        response.status === 401 ||
+        response.status === 403 ||
+        (responseData && responseData.error === 'jwt expired')
+      ) {
+        window.location.href = 'https://auth.docapp.co.in';
         return;
       }
 
-      const error = new Error(responseData?.message || `HTTP Exception: ${response.status}`);
+      const error = new Error(
+        responseData?.message || `HTTP Exception: ${response.status}`
+      );
       error.response = { data: responseData, status: response.status };
       throw error;
     }
@@ -60,6 +57,8 @@ const makeRequest = async (endpoint, options = {}) => {
     throw error;
   }
 };
+
+
 
 export const doctorService = {
   // Profile & Verification Actions
