@@ -130,6 +130,9 @@ export default function ProfileCompletion() {
   };
 
   const handleOtpChange = (type, value) => {
+    if (value !== '' && (!/^\d+$/.test(value) || value.length > 6)) {
+      return;
+    }
     setOtpState(prev => ({
       ...prev,
       [type]: { ...prev[type], otp: value, error: null }

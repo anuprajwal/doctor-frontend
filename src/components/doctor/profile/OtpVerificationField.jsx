@@ -1,4 +1,3 @@
-import React from 'react';
 import InputField from '../../ui/InputField';
 
 const CheckCircleIcon = () => (
@@ -21,6 +20,22 @@ export default function OtpVerificationField({
   placeholder,
   helperText
 }) {
+  const onOtpLocalChange = (type, rawValue) => {
+    // Check for non-numeric characters
+    if (rawValue !== '' && !/^\d+$/.test(rawValue)) {
+      onOtpChange(type, otpData.otp, 'Please enter numbers only');
+      return;
+    }
+    // Check for length exceeding 6 characters
+    if (rawValue.length > 6) {
+      onOtpChange(type, otpData.otp, 'OTP cannot exceed 6 digits');
+      return;
+    }
+
+    // Clear error if input is valid
+    onOtpChange(type, rawValue, null);
+  };
+
   return (
     <div className="space-y-2">
       <div className="flex items-end gap-2">
@@ -53,7 +68,7 @@ export default function OtpVerificationField({
               className="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-blue-500 bg-white"
               value={otpData.otp}
               disabled={otpData.attempts >= maxAttempts}
-              onChange={e => onOtpChange(type, e.target.value.replace(/\D/g, ''))}
+              onChange={e => onOtpLocalChange(type, e.target.value)}
             />
             <button
               type="button"
