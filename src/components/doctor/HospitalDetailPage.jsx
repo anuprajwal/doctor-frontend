@@ -167,7 +167,7 @@ export default function HospitalDetailPage({ hospital: propHospital, onBack }) {
                 )}
                 {hospital?.establishment_year && (
                   <span className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-                    <Calendar className="w-3.5 h-3.5 text-blue-500" /> Est: {hospital.establishment_year}
+                    <Calendar className="w-3.5 h-3.5 text-blue-500" /> Est: {hospital.establishment_year ? new Date(hospital.establishment_year).getFullYear() : 'N/A'}
                   </span>
                 )}
                 {hospital?.website_url && (

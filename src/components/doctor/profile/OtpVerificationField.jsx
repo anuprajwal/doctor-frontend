@@ -23,17 +23,17 @@ export default function OtpVerificationField({
   const onOtpLocalChange = (type, rawValue) => {
     // Check for non-numeric characters
     if (rawValue !== '' && !/^\d+$/.test(rawValue)) {
-      onOtpChange(type, otpData.otp, 'Please enter numbers only');
+      onOtpChange(type, otpData.otp);
       return;
     }
     // Check for length exceeding 6 characters
     if (rawValue.length > 6) {
-      onOtpChange(type, otpData.otp, 'OTP cannot exceed 6 digits');
+      onOtpChange(type, otpData.otp);
       return;
     }
 
     // Clear error if input is valid
-    onOtpChange(type, rawValue, null);
+    onOtpChange(type, rawValue);
   };
 
   return (

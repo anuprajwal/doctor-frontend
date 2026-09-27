@@ -101,12 +101,15 @@ export const doctorService = {
     if (offset) query.append('offset', offset);
     if (pincode) query.append('pincode', pincode);
 
-    return makeRequest(`/api/filter/filter-hospitals?${query.toString()}`, { method: 'GET' });
+    return makeRequest(`/api/filter/filter-hospitals-standalone?${query.toString()}`, { method: 'GET' });
   },
 
   getHospitalDoctors: (organisationId, limit = 10, offset = 0) =>
     makeRequest(`/api/filter/get-hospital-doctors/${organisationId}?limit=${limit}&offset=${offset}`, { method: 'GET' }),
 
   searchHospitalsByName: (name) => makeRequest('/api/filter/search/hospital-by-name', { method: 'POST', body: { name } }),
-  requestAdmission: (organisationId) => makeRequest('/api/hospital/doctor-request-admission', { method: 'POST', body: { organisation_id: organisationId } }),
+  requestAdmission: (organisationId) => 
+    makeRequest('/api/hospital/doctor-request-admission', { method: 'POST', body: { organisation_id: organisationId } }),
+
+  getRequestStatus:()=> makeRequest('/api/hospital/check-doctor-request', { method: 'GET' }),
 };
