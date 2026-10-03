@@ -13,7 +13,7 @@ export default function Navbar({ currentTab, setCurrentTab }) {
     localStorage.removeItem('auth_token');
     
     // Redirect to authentication gateway
-    window.location.href = 'https://auth.docapp.co.in';
+    window.location.href = 'https://docapp.co.in';
   };
 
   const navItems = [
