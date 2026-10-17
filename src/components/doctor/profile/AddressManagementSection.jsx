@@ -16,13 +16,12 @@ export default function AddressManagementSection({
   onSubmit,
   onDelete
 }) {
-  console.log('AddressManagementSection rendered with addresses:', addresses);
   return (
     <div className="bg-white border border-slate-200/80 shadow-sm rounded-xl p-8 space-y-6">
       <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Practice Locations & Addresses</h3>
 
       <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden bg-slate-50/20">
-        {(
+        {addresses.id && (
             <div key={addresses.id} className="p-4 flex items-center justify-between text-xs text-slate-600">
               <div>
                 <strong className="text-slate-800 font-bold block">{addresses.house_no} {addresses.street}</strong>
