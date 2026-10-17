@@ -16,7 +16,7 @@ import {
   AlertCircle,
   CheckCircle2,
   XCircle
-} from '../ui/Icons.jsx';
+} from '../ui/Icons';
 
 export default function HospitalSearch({ onViewHospital }) {
   const [hospitals, setHospitals] = useState([]);

@@ -5,7 +5,7 @@ import Alert from '../ui/Alert';
 import { 
   ArrowLeft, MapPin, Globe, Award, Calendar, 
   ShieldCheck, ChevronLeft, ChevronRight, Stethoscope, Clock, AlertCircle 
-} from '../ui/Icons.jsx';
+} from '../ui/Icons';
 import { getSelectedItem, clearSelectedItem } from '../../utils/navigationStorage';
 
 export default function HospitalDetailPage({ hospital: propHospital, onBack }) {
