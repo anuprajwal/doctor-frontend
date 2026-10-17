@@ -16,75 +16,91 @@ export default function AddressManagementSection({
   onSubmit,
   onDelete
 }) {
+  const hasAddress = Boolean(addresses && addresses.id);
+  const isEditing = Boolean(editingAddressId);
+
   return (
     <div className="bg-white border border-slate-200/80 shadow-sm rounded-xl p-8 space-y-6">
       <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Practice Locations & Addresses</h3>
 
-      <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden bg-slate-50/20">
-        {addresses.id && (
-            <div key={addresses.id} className="p-4 flex items-center justify-between text-xs text-slate-600">
-              <div>
-                <strong className="text-slate-800 font-bold block">{addresses.house_no} {addresses.street}</strong>
-                <span>{addresses.city}, {addresses.state} - {addresses.pincode} {addresses.landmark && `[Ref: ${addresses.landmark}]`}</span>
-              </div>
-              <div className="flex gap-3">
-                <button 
-                  type="button" 
-                  onClick={() => { setEditingAddressId(addresses.id); setAddressForm({ city: addresses.city || '', pincode: addresses.pincode || '', street: addresses.street || '', state: addresses.state || '', country: addresses.country || '', landmark: addresses.landmark || '', house_no: addresses.house_no || '' }); }} 
-                  className="text-blue-600 hover:underline font-bold"
-                >
-                  Edit
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => onDelete(addresses.id)} 
-                  className="text-rose-600 hover:text-rose-800 font-bold"
-                >
-                  <TrashIcon />
-                </button>
-              </div>
+      {/* Show Address Details ONLY if an address exists AND we are NOT currently editing */}
+      {hasAddress && !isEditing ? (
+        <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden bg-slate-50/20">
+          <div key={addresses.id} className="p-4 flex items-center justify-between text-xs text-slate-600">
+            <div>
+              <strong className="text-slate-800 font-bold block">{addresses.house_no} {addresses.street}</strong>
+              <span>{addresses.city}, {addresses.state} {addresses.pincode} {addresses.landmark && `[Ref: ${addresses.landmark}]`}</span>
             </div>
-          
-        )}
-      </div>
-
-      <form onSubmit={onSubmit} className="p-4 border border-slate-200 bg-slate-50/50 rounded-xl space-y-4">
-        <h4 className="text-xs font-bold text-slate-700">{editingAddressId ? 'Edit Workspace Location' : 'Add New Practice Address'}</h4>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <InputField label="House/Clinic No" value={addressForm.house_no} onChange={(e) => setAddressForm({ ...addressForm, house_no: e.target.value })} placeholder="Rm 404" />
-          <InputField label="Street Route" value={addressForm.street} onChange={(e) => setAddressForm({ ...addressForm, street: e.target.value })} placeholder="Main Rd" />
-          <InputField label="City Landmark" value={addressForm.landmark} onChange={(e) => setAddressForm({ ...addressForm, landmark: e.target.value })} />
-          <InputField label="City Area" value={addressForm.city} onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })} placeholder="City" />
-          <InputField label="State Region" value={addressForm.state} onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })} placeholder="State" />
-          <InputField 
-            label="Postal Code" 
-            value={addressForm.pincode} 
-            onChange={(e) =>{ 
-              if (/^\d*$/.test(e.target.value)) { // Allow only digits
-                setAddressForm({ ...addressForm, pincode: e.target.value });
-              }
-            }}
-            placeholder="500001" />
-          <InputField label="Country" value={addressForm.country} onChange={(e) => setAddressForm({ ...addressForm, country: e.target.value })} placeholder="India" />
+            <div className="flex gap-3">
+              <button 
+                type="button" 
+                onClick={() => { 
+                  setEditingAddressId(addresses.id); 
+                  setAddressForm({ 
+                    city: addresses.city || '', 
+                    pincode: addresses.pincode || '', 
+                    street: addresses.street || '', 
+                    state: addresses.state || '', 
+                    country: addresses.country || '', 
+                    landmark: addresses.landmark || '', 
+                    house_no: addresses.house_no || '' 
+                  }); 
+                }} 
+                className="text-blue-600 hover:underline font-bold"
+              >
+                Edit
+              </button>
+              <button 
+                type="button" 
+                onClick={() => onDelete(addresses.id)} 
+                className="text-rose-600 hover:text-rose-800 font-bold"
+              >
+                <TrashIcon />
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="flex justify-end gap-2">
-          {editingAddressId && (
-            <button
-              type="button"
-              onClick={() => {
-                setEditingAddressId(null);
-                setAddressForm({ city: '', pincode: '', street: '', state: '', country: '', landmark: '', house_no: '' });
+      ) : (
+        /* Show Form if there is NO address OR if we are currently EDITING */
+        <form onSubmit={onSubmit} className="p-4 border border-slate-200 bg-slate-50/50 rounded-xl space-y-4">
+          <h4 className="text-xs font-bold text-slate-700">{editingAddressId ? 'Edit Workspace Location' : 'Add New Practice Address'}</h4>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <InputField label="House/Clinic No" value={addressForm.house_no} onChange={(e) => setAddressForm({ ...addressForm, house_no: e.target.value })} placeholder="Rm 404" />
+            <InputField label="Street Route" value={addressForm.street} onChange={(e) => setAddressForm({ ...addressForm, street: e.target.value })} placeholder="Main Rd" />
+            <InputField label="City Landmark" value={addressForm.landmark} onChange={(e) => setAddressForm({ ...addressForm, landmark: e.target.value })} />
+            <InputField label="City Area" value={addressForm.city} onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })} placeholder="City" />
+            <InputField label="State Region" value={addressForm.state} onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })} placeholder="State" />
+            <InputField 
+              label="Postal Code" 
+              value={addressForm.pincode} 
+              onChange={(e) =>{ 
+                if (/^\d*$/.test(e.target.value) && e.target.value.length <= 6) { 
+                  setAddressForm({ ...addressForm, pincode: e.target.value });
+                }
               }}
-              className="px-3 py-1.5 border rounded-lg text-xs font-semibold"
-            >
-              Cancel
+              placeholder="500001" 
+            />
+            <InputField label="Country" value={addressForm.country} onChange={(e) => setAddressForm({ ...addressForm, country: e.target.value })} placeholder="India" />
+          </div>
+          <div className="flex justify-end gap-2">
+            {editingAddressId && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingAddressId(null);
+                  setAddressForm({ city: '', pincode: '', street: '', state: '', country: '', landmark: '', house_no: '' });
+                }}
+                className="px-3 py-1.5 border rounded-lg text-xs font-semibold"
+              >
+                Cancel
+              </button>
+            )}
+            <button type="submit" className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition">
+              {editingAddressId ? 'Save Updates' : 'Add Address'}
             </button>
-          )}
-          <button type="submit" className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition">
-            {editingAddressId ? 'Save Updates' : 'Add Address'}
-          </button>
-        </div>
-      </form>
+          </div>
+        </form>
+      )}
     </div>
   );
 }
