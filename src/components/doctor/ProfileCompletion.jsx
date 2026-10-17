@@ -297,6 +297,9 @@ export default function ProfileCompletion() {
     setStatus({ loading: true, error: null, success: null });
     try {
       await doctorService.deleteAddress(id);
+      if (!id) {
+        console.log('Address ID is undefined or null. Cannot delete address.', id);
+      }
       setStatus({ loading: false, error: null, success: 'Address removed successfully.' });
       fetchAddressesData();
     } catch (err) {

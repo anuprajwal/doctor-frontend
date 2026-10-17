@@ -39,7 +39,7 @@ const makeRequest = async (endpoint, options = {}) => {
         response.status === 403 ||
         responseData?.error === 'jwt expired'
       ) {
-        window.location.href = 'https://auth.docapp.co.in';
+        window.location.href = 'https://auth.docapp.co.in/doctor/login';
         return;
       }
 

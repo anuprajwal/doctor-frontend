@@ -90,7 +90,7 @@ export const doctorService = {
   addAddress: (data) => makeRequest('/api/address/addAddress', { method: 'POST', body: data }),
   getAllAddresses: () => makeRequest('/api/address/getAllAddress', { method: 'GET' }),
   updateAddress: (data) => makeRequest('/api/address/updateAddress', { method: 'PUT', body: data }),
-  deleteAddress: (addressId) => makeRequest('/api/address/deleteAddress', { method: 'DELETE', body: { addressId } }),
+  deleteAddress: (addressId) => makeRequest('/api/address/deleteAddress', { method: 'DELETE', body: { "addressId": addressId } }),
   uploadBankDetails: (data) => makeRequest('/api/auth/upload/bank-details', { method: 'POST', body: data }),
 
   // Hospital Discovery & Affiliation
