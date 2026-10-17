@@ -22,33 +22,30 @@ export default function AddressManagementSection({
       <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Practice Locations & Addresses</h3>
 
       <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden bg-slate-50/20">
-        {!Array.isArray(addresses) || addresses.length === 0 ? (
-          <p className="text-xs text-slate-400 italic p-4">No clinic addresses mapped onto this account.</p>
-        ) : (
-          addresses.map((addr, idx) => (
-            <div key={addr.addressId || idx} className="p-4 flex items-center justify-between text-xs text-slate-600">
+        {(
+            <div key={addresses.id} className="p-4 flex items-center justify-between text-xs text-slate-600">
               <div>
-                <strong className="text-slate-800 font-bold block">{addr.house_no} {addr.street}</strong>
-                <span>{addr.city}, {addr.state} - {addr.pincode} {addr.landmark && `[Ref: ${addr.landmark}]`}</span>
+                <strong className="text-slate-800 font-bold block">{addresses.house_no} {addresses.street}</strong>
+                <span>{addresses.city}, {addresses.state} - {addresses.pincode} {addresses.landmark && `[Ref: ${addresses.landmark}]`}</span>
               </div>
               <div className="flex gap-3">
                 <button 
                   type="button" 
-                  onClick={() => { setEditingAddressId(addr.addressId); setAddressForm({ city: addr.city || '', pincode: addr.pincode || '', street: addr.street || '', state: addr.state || '', country: addr.country || '', landmark: addr.landmark || '', house_no: addr.house_no || '' }); }} 
+                  onClick={() => { setEditingAddressId(addresses.id); setAddressForm({ city: addresses.city || '', pincode: addresses.pincode || '', street: addresses.street || '', state: addresses.state || '', country: addresses.country || '', landmark: addresses.landmark || '', house_no: addresses.house_no || '' }); }} 
                   className="text-blue-600 hover:underline font-bold"
                 >
                   Edit
                 </button>
                 <button 
                   type="button" 
-                  onClick={() => onDelete(addr.addressId)} 
+                  onClick={() => onDelete(addresses.id)} 
                   className="text-rose-600 hover:text-rose-800 font-bold"
                 >
                   <TrashIcon />
                 </button>
               </div>
             </div>
-          ))
+          
         )}
       </div>
 
