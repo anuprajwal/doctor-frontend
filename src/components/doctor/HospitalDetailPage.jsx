@@ -4,12 +4,11 @@ import Loader from '../ui/Loader';
 import Alert from '../ui/Alert';
 import { 
   ArrowLeft, MapPin, Globe, Award, Calendar, 
-  ShieldCheck, ChevronLeft, ChevronRight, Stethoscope, Clock 
+  ShieldCheck, ChevronLeft, ChevronRight, Stethoscope, Clock, AlertCircle 
 } from '../ui/Icons';
 import { getSelectedItem, clearSelectedItem } from '../../utils/navigationStorage';
 
 export default function HospitalDetailPage({ hospital: propHospital, onBack }) {
-  // Read active item from prop or storage fallback on page reload
   const hospital = propHospital || getSelectedItem('doctor_hospital');
 
   const [doctors, setDoctors] = useState([]);
@@ -18,13 +17,26 @@ export default function HospitalDetailPage({ hospital: propHospital, onBack }) {
   const [docLimit] = useState(6);
   const [totalDocs, setTotalDocs] = useState(0);
   const [status, setStatus] = useState({ loading: false, error: null, success: null });
+  const [requestStatus, setRequestStatus] = useState(null);
 
   useEffect(() => {
     const targetId = hospital?.user_id || hospital?.id;
     if (targetId) {
       fetchDoctors(targetId, docOffset);
+      checkRequestStatus();
     }
   }, [hospital?.user_id, hospital?.id, docOffset]);
+
+  const checkRequestStatus = async () => {
+    try {
+      const response = await doctorService.getRequestStatus();
+      if (response && response.data) {
+        setRequestStatus(response.data);
+      }
+    } catch (err) {
+      setRequestStatus(null);
+    }
+  };
 
   const fetchDoctors = async (orgId, currentDocOffset) => {
     setLoadingDoctors(true);
@@ -50,6 +62,7 @@ export default function HospitalDetailPage({ hospital: propHospital, onBack }) {
         error: null, 
         success: 'Admission request successfully forwarded to the hospital administration.' 
       });
+      checkRequestStatus();
     } catch (err) {
       setStatus({ 
         loading: false, 
@@ -120,6 +133,10 @@ export default function HospitalDetailPage({ hospital: propHospital, onBack }) {
   const docCurrentPage = Math.floor(docOffset / docLimit) + 1;
   const docTotalPages = Math.ceil(totalDocs / docLimit) || 1;
 
+  const hasActiveRequestElsewhere = requestStatus && 
+    (requestStatus.request_status === 'pending' || requestStatus.request_status === 'accepted') && 
+    requestStatus.organisation_id !== hospital.id;
+
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       <button
@@ -128,6 +145,15 @@ export default function HospitalDetailPage({ hospital: propHospital, onBack }) {
       >
         <ArrowLeft className="w-4 h-4" /> Return to Hospital Discovery
       </button>
+
+      {hasActiveRequestElsewhere && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3 text-xs text-amber-800 font-medium">
+          <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+          <span>
+            Cancel request of hospital: <strong className="font-bold">{requestStatus.requested_organisation}</strong> to request here.
+          </span>
+        </div>
+      )}
 
       <Alert type={status.success ? 'success' : 'error'} message={status.success || status.error} />
 
@@ -186,8 +212,8 @@ export default function HospitalDetailPage({ hospital: propHospital, onBack }) {
 
           <button
             onClick={handleSendJoinRequest}
-            disabled={status.loading}
-            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-sm self-start transition whitespace-nowrap"
+            disabled={status.loading || hasActiveRequestElsewhere}
+            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-sm self-start transition whitespace-nowrap cursor-pointer disabled:cursor-not-allowed"
           >
             {status.loading ? 'Submitting...' : 'Request Admission'}
           </button>
