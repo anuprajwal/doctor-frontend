@@ -93,7 +93,7 @@ export default function ProfileCompletion() {
   const fetchAddressesData = async () => {
     try {
       const res = await doctorService.getAllAddresses();
-      setAddresses(Array.isArray(res.data) ? res.data : (res.data?.addresses || []));
+      setAddresses(Array.isArray(res.data) ? res.data : (res.data?.addresses[0] || []));
     } catch (err) {
       setAddresses([]);
     }

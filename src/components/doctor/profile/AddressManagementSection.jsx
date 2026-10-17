@@ -28,7 +28,7 @@ export default function AddressManagementSection({
           addresses.map((addr, idx) => (
             <div key={addr.addressId || idx} className="p-4 flex items-center justify-between text-xs text-slate-600">
               <div>
-                <strong className="text-slate-800 font-bold block">{addr.house_no || '12/3-1'} {addr.street}</strong>
+                <strong className="text-slate-800 font-bold block">{addr.house_no} {addr.street}</strong>
                 <span>{addr.city}, {addr.state} - {addr.pincode} {addr.landmark && `[Ref: ${addr.landmark}]`}</span>
               </div>
               <div className="flex gap-3">
