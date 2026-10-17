@@ -66,7 +66,7 @@ export default function HospitalDetailPage({ hospital: propHospital, onBack }) {
     } catch (err) {
       setStatus({ 
         loading: false, 
-        error: err.response?.data?.message || 'Admission request failed. Please try again.', 
+        error: err.response?.data?.error || 'Admission request failed. Please try again.', 
         success: null 
       });
     }
