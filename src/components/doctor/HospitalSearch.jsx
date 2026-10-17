@@ -21,6 +21,7 @@ export default function HospitalSearch({ onViewHospital }) {
   const [offset, setOffset] = useState(0);
   const [totalRecords, setTotalRecords] = useState(0);
   const [status, setStatus] = useState({ loading: false, error: null });
+  const [requestStatus, setRequestStatus] = useState({});
 
   const fetchHospitals = async (currentOffset = offset, pin = pincode) => {
     setStatus({ loading: true, error: null });
@@ -37,8 +38,17 @@ export default function HospitalSearch({ onViewHospital }) {
     }
   };
 
+  const checkRequestStatus = async () => {
+    const response = await doctorService.getRequestStatus();
+    if (response && response.data) {
+      console.log('Request Status:', response.data);
+      setRequestStatus(response.data);
+    }
+  }
+
   useEffect(() => {
     fetchHospitals(offset, pincode);
+    checkRequestStatus()
   }, [offset]);
 
   const handlePincodeSearch = (e) => {
