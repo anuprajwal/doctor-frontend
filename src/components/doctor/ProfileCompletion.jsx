@@ -27,7 +27,7 @@ export default function ProfileCompletion() {
   });
 
   const [addresses, setAddresses] = useState([]);
-  const [addressForm, setAddressForm] = useState({ city: '', pincode: '', street: '', state: '', country: '', landmark: '', houseNo: '' });
+  const [addressForm, setAddressForm] = useState({ city: '', pincode: '', street: '', state: '', country: '', landmark: '', house_no: '' });
   const [editingAddressId, setEditingAddressId] = useState(null);
   const [status, setStatus] = useState({ loading: false, error: null, success: null });
 
@@ -285,7 +285,7 @@ export default function ProfileCompletion() {
         await doctorService.addAddress(addressForm);
         setStatus({ loading: false, error: null, success: 'New address location recorded.' });
       }
-      setAddressForm({ city: '', pincode: '', street: '', state: '', country: '', landmark: '', houseNo: '' });
+      setAddressForm({ city: '', pincode: '', street: '', state: '', country: '', landmark: '', house_no: '' });
       setEditingAddressId(null);
       fetchAddressesData();
     } catch (err) {
