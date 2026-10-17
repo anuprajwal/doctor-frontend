@@ -56,7 +56,15 @@ export default function AddressManagementSection({
           <InputField label="City Landmark" value={addressForm.landmark} onChange={(e) => setAddressForm({ ...addressForm, landmark: e.target.value })} />
           <InputField label="City Area" value={addressForm.city} onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })} placeholder="City" />
           <InputField label="State Region" value={addressForm.state} onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })} placeholder="State" />
-          <InputField label="Postal Code" value={addressForm.pincode} onChange={(e) => setAddressForm({ ...addressForm, pincode: e.target.value })} placeholder="500001" />
+          <InputField 
+            label="Postal Code" 
+            value={addressForm.pincode} 
+            onChange={(e) =>{ 
+              if (/^\d*$/.test(e.target.value)) { // Allow only digits
+                setAddressForm({ ...addressForm, pincode: e.target.value });
+              }
+            }}
+            placeholder="500001" />
           <InputField label="Country" value={addressForm.country} onChange={(e) => setAddressForm({ ...addressForm, country: e.target.value })} placeholder="India" />
         </div>
         <div className="flex justify-end gap-2">
